@@ -101,8 +101,7 @@ return [
             'sync' => 'Sync now',
             'sync_queued' => ':count sync request(s) sent. Products already queued are skipped.',
             'import_new_variants' => 'Import new variants',
-            'new_variants_imported' => ':count variant(s) imported.',
-            'new_variants_failed' => 'Could not import new variants: :message',
+            'new_variants_requested' => 'Import of new variants requested.',
         ],
     ],
 ];

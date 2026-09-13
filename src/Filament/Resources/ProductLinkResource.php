@@ -13,12 +13,11 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Lunar\Admin\Filament\Resources\ProductResource;
 use Lunar\Admin\Support\Resources\BaseResource;
-use Thayron\LunarCjDropshipping\Actions\ImportNewVariants;
 use Thayron\LunarCjDropshipping\Enums\CjProductStatus;
 use Thayron\LunarCjDropshipping\Filament\Resources\ProductLinkResource\Pages;
+use Thayron\LunarCjDropshipping\Jobs\ImportNewVariantsJob;
 use Thayron\LunarCjDropshipping\Jobs\SyncProductJob;
 use Thayron\LunarCjDropshipping\Models\ProductLink;
-use Throwable;
 
 class ProductLinkResource extends BaseResource
 {
@@ -123,12 +122,8 @@ class ProductLinkResource extends BaseResource
                     ->visible(fn (ProductLink $record): bool => $record->new_cj_variant_ids !== [])
                     ->requiresConfirmation()
                     ->action(function (ProductLink $record): void {
-                        try {
-                            $count = app(ImportNewVariants::class)->handle($record);
-                            Notification::make()->title(__('lunar-cjdropshipping::admin.links.actions.new_variants_imported', ['count' => $count]))->success()->send();
-                        } catch (Throwable $exception) {
-                            Notification::make()->title(__('lunar-cjdropshipping::admin.links.actions.new_variants_failed', ['message' => $exception->getMessage()]))->danger()->send();
-                        }
+                        ImportNewVariantsJob::dispatch($record);
+                        Notification::make()->title(__('lunar-cjdropshipping::admin.links.actions.new_variants_requested'))->success()->send();
                     }),
             ])
             ->bulkActions([

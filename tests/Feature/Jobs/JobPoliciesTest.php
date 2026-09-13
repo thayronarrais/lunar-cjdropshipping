@@ -7,6 +7,7 @@ namespace Thayron\LunarCjDropshipping\Tests\Feature\Jobs;
 use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Thayron\LunarCjDropshipping\Jobs\DiscoverCandidatesJob;
+use Thayron\LunarCjDropshipping\Jobs\ImportNewVariantsJob;
 use Thayron\LunarCjDropshipping\Jobs\ImportProductImagesJob;
 use Thayron\LunarCjDropshipping\Jobs\ImportProductJob;
 use Thayron\LunarCjDropshipping\Jobs\SyncProductJob;
@@ -26,6 +27,7 @@ final class JobPoliciesTest extends TestCase
             'discover' => [fn (): object => new DiscoverCandidatesJob(new ImportRule), 3600],
             'import' => [fn (): object => new ImportProductJob(new Candidate), 600],
             'sync' => [fn (): object => new SyncProductJob(new ProductLink), 300],
+            'new variants' => [fn (): object => new ImportNewVariantsJob(new ProductLink), 600],
         ];
     }
 

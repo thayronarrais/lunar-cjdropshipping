@@ -7,9 +7,9 @@ namespace Thayron\LunarCjDropshipping\Tests\Filament;
 use Illuminate\Bus\UniqueLock;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
-use Lunar\Models\ProductVariant;
 use Thayron\LunarCjDropshipping\Enums\CjProductStatus;
 use Thayron\LunarCjDropshipping\Filament\Resources\ProductLinkResource\Pages\ListProductLinks;
+use Thayron\LunarCjDropshipping\Jobs\ImportNewVariantsJob;
 use Thayron\LunarCjDropshipping\Jobs\SyncProductJob;
 use Thayron\LunarCjDropshipping\Models\ProductLink;
 use Thayron\LunarCjDropshipping\Tests\FilamentTestCase;
@@ -80,14 +80,15 @@ final class ProductLinkResourceTest extends FilamentTestCase
 
     public function test_imports_new_variants(): void
     {
+        Queue::fake();
         $this->link->forceFill(['new_cj_variant_ids' => ['v-3']])->save();
-        $detail = FakeCj::data('product-detail');
-        $detail['variants'][] = ['vid' => 'v-3', 'pid' => 'p-100', 'variantSku' => 'CJ-CASE-RED-S', 'variantKey' => 'Red-S', 'variantSellPrice' => '10.00'];
-        $this->cj->success($detail)->fixture('stock-by-pid');
 
-        Livewire::test(ListProductLinks::class)->callTableAction('import_new_variants', $this->link);
+        Livewire::test(ListProductLinks::class)
+            ->callTableAction('import_new_variants', $this->link)
+            ->assertNotified('Import of new variants requested.');
 
-        $this->assertSame(1, ProductVariant::query()->where('sku', 'CJ-CASE-RED-S')->count());
-        $this->assertSame([], $this->link->fresh()->new_cj_variant_ids);
+        Queue::assertPushed(ImportNewVariantsJob::class, fn (ImportNewVariantsJob $job) => $job->link->is($this->link));
+        Queue::assertPushedOn('cjdropshipping', ImportNewVariantsJob::class);
+        $this->assertSame(['v-3'], $this->link->fresh()->new_cj_variant_ids);
     }
 }

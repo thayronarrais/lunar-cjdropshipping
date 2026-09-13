@@ -101,8 +101,7 @@ return [
             'sync' => 'Sincronizar agora',
             'sync_queued' => ':count sincronização(ões) solicitada(s). Produtos já na fila são ignorados.',
             'import_new_variants' => 'Importar variantes novas',
-            'new_variants_imported' => ':count variante(s) importada(s).',
-            'new_variants_failed' => 'Não foi possível importar as variantes novas: :message',
+            'new_variants_requested' => 'Importação das variantes novas solicitada.',
         ],
     ],
 ];
