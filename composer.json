@@ -1,0 +1,50 @@
+{
+    "name": "thayron/lunar-cjdropshipping",
+    "description": "Import CJdropshipping products into Lunar stores and keep stock and prices in sync.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["lunar", "laravel", "cjdropshipping", "dropshipping", "ecommerce", "filament"],
+    "require": {
+        "php": "^8.2",
+        "lunarphp/core": "^1.4",
+        "lunarphp/lunar": "^1.4",
+        "thayron/cjdropshipping-php": "^0.1"
+    },
+    "require-dev": {
+        "guzzlehttp/guzzle": "^7.8",
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.18",
+        "orchestra/testbench": "^9.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Thayron\\LunarCjDropshipping\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Thayron\\LunarCjDropshipping\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Thayron\\LunarCjDropshipping\\LunarCjDropshippingServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse --memory-limit=2G",
+        "format": "pint"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
