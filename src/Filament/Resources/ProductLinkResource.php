@@ -97,6 +97,13 @@ class ProductLinkResource extends BaseResource
                     ->state(fn (ProductLink $record): int => count($record->new_cj_variant_ids))
                     ->badge()
                     ->color(fn (int $state): string => $state > 0 ? 'warning' : 'gray'),
+                Tables\Columns\TextColumn::make('margin_at_risk')
+                    ->label($column('margin'))
+                    ->badge()
+                    ->state(fn (ProductLink $record): ?string => $record->price_locked ? ($record->margin_at_risk ? 'at_risk' : 'ok') : null)
+                    ->formatStateUsing(fn (string $state): string => __('lunar-cjdropshipping::admin.links.margin.'.$state))
+                    ->color(fn (string $state): string => $state === 'at_risk' ? 'danger' : 'success')
+                    ->placeholder('—'),
                 Tables\Columns\TextColumn::make('last_synced_at')->label($column('last_synced_at'))->since()->sortable()->placeholder('—'),
                 Tables\Columns\TextColumn::make('sync_error')->label($column('sync_error'))->limit(40)->tooltip(fn (ProductLink $record): ?string => $record->sync_error)->placeholder('—'),
             ])
@@ -110,6 +117,9 @@ class ProductLinkResource extends BaseResource
                 Tables\Filters\Filter::make('new_variants')
                     ->label(__('lunar-cjdropshipping::admin.links.filters.new_variants'))
                     ->query(fn (Builder $query): Builder => $query->whereJsonLength('new_cj_variant_ids', '>', 0)),
+                Tables\Filters\Filter::make('margin_at_risk')
+                    ->label(__('lunar-cjdropshipping::admin.links.filters.margin_at_risk'))
+                    ->query(fn (Builder $query): Builder => $query->where('margin_at_risk', true)),
             ])
             ->actions([
                 Tables\Actions\Action::make('sync')

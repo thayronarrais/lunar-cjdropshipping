@@ -110,6 +110,7 @@ return [
             'cj_status' => 'Status na CJ',
             'variants' => 'Variantes vinculadas',
             'new_variants' => 'Novas na CJ',
+            'margin' => 'Margem',
             'last_synced_at' => 'Última sincronização',
             'sync_error' => 'Erro',
         ],
@@ -117,10 +118,15 @@ return [
             'active' => 'Ativo',
             'unavailable' => 'Indisponível',
         ],
+        'margin' => [
+            'at_risk' => 'Em risco',
+            'ok' => 'OK',
+        ],
         'filters' => [
             'unavailable' => 'Indisponível na CJ',
             'with_error' => 'Com erro de sincronização',
             'new_variants' => 'Com variantes novas na CJ',
+            'margin_at_risk' => 'Margem em risco',
         ],
         'actions' => [
             'sync' => 'Sincronizar agora',

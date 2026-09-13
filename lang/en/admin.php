@@ -110,6 +110,7 @@ return [
             'cj_status' => 'CJ status',
             'variants' => 'Linked variants',
             'new_variants' => 'New on CJ',
+            'margin' => 'Margin',
             'last_synced_at' => 'Last sync',
             'sync_error' => 'Error',
         ],
@@ -117,10 +118,15 @@ return [
             'active' => 'Active',
             'unavailable' => 'Unavailable',
         ],
+        'margin' => [
+            'at_risk' => 'At risk',
+            'ok' => 'OK',
+        ],
         'filters' => [
             'unavailable' => 'Unavailable on CJ',
             'with_error' => 'With sync error',
             'new_variants' => 'With new CJ variants',
+            'margin_at_risk' => 'Margin at risk',
         ],
         'actions' => [
             'sync' => 'Sync now',

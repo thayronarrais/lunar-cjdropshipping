@@ -16,10 +16,12 @@ use Thayron\LunarCjDropshipping\Enums\CjProductStatus;
 use Thayron\LunarCjDropshipping\Enums\UnavailableAction;
 use Thayron\LunarCjDropshipping\Mapping\StockResolver;
 use Thayron\LunarCjDropshipping\Models\ProductLink;
+use Thayron\LunarCjDropshipping\Models\VariantLink;
+use Thayron\LunarCjDropshipping\Pricing\ListingPriceCalculator;
 use Thayron\LunarCjDropshipping\Support\Throttle;
 
 /**
- * Syncs stock, cost-based prices and availability. Never touches names, descriptions, images or options.
+ * Syncs stock, cost-based prices (unless locked by a confirmed listing) and availability. Never touches names, descriptions, images or options.
  */
 final class SyncProduct
 {
@@ -28,6 +30,7 @@ final class SyncProduct
         private readonly Throttle $throttle,
         private readonly StockResolver $stock,
         private readonly VariantWriter $variants,
+        private readonly ListingPriceCalculator $listingPrices,
     ) {}
 
     public function handle(ProductLink $link): void
@@ -51,6 +54,10 @@ final class SyncProduct
             /** @var list<int> $enabledCurrencyIds */
             $enabledCurrencyIds = Currency::query()->where('enabled', true)->pluck('id')->all();
 
+            $currency = $link->price_locked ? Currency::query()->where('code', (string) $link->currency_code)->first() : null;
+            $minimumMargin = (string) config('lunar-cjdropshipping.pricing.min_margin_percent', 20);
+            $marginAtRisk = false;
+
             foreach ($link->variantLinks()->with('variant')->get() as $variantLink) {
                 $variant = $variantLink->variant;
 
@@ -73,7 +80,9 @@ final class SyncProduct
 
                 $costChanged = $variantLink->cost_usd === null || ($cost !== null && bccomp($cost, (string) $variantLink->cost_usd, 2) !== 0);
 
-                if ($cost !== null && ($costChanged || $this->isMissingPrices($variant, $enabledCurrencyIds))) {
+                if ($link->price_locked) {
+                    $marginAtRisk = $marginAtRisk || $this->isMarginAtRisk($variantLink, $cost ?? $variantLink->cost_usd, $currency, $minimumMargin);
+                } elseif ($cost !== null && ($costChanged || $this->isMissingPrices($variant, $enabledCurrencyIds))) {
                     $this->variants->writePrices($variant, $cost, $link);
                 }
 
@@ -85,9 +94,10 @@ final class SyncProduct
             $link->forceFill([
                 'not_found_count' => 0,
                 'cj_status' => CjProductStatus::Active,
-                'new_cj_variant_ids' => array_values(array_diff(array_keys($cjVariants), $known)),
+                'new_cj_variant_ids' => array_values(array_diff(array_map('strval', array_keys($cjVariants)), $known, $link->skipped_cj_variant_ids ?? [])),
                 'last_synced_at' => now(),
                 'sync_error' => null,
+                'margin_at_risk' => $marginAtRisk,
             ])->save();
         });
     }
@@ -109,6 +119,17 @@ final class SyncProduct
             ->count('currency_id');
 
         return $priced < count($enabledCurrencyIds);
+    }
+
+    private function isMarginAtRisk(VariantLink $variantLink, ?string $costUsd, ?Currency $currency, string $minimumMargin): bool
+    {
+        if ($currency === null || $costUsd === null || $variantLink->price === null || $variantLink->shipping_cost_usd === null) {
+            return true;
+        }
+
+        $margin = $this->listingPrices->margin((string) $variantLink->price, $costUsd, (string) $variantLink->shipping_cost_usd, $currency);
+
+        return $margin === null || bccomp($margin, $minimumMargin, 2) < 0;
     }
 
     private function recordNotFound(ProductLink $link): void
