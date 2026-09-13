@@ -30,7 +30,7 @@ use Thayron\LunarCjDropshipping\Enums\PriceRounding;
  * @property CjProductStatus $cj_status
  * @property int $not_found_count
  * @property list<string> $new_cj_variant_ids
- * @property list<string> $skipped_cj_variant_ids
+ * @property list<string>|null $skipped_cj_variant_ids
  * @property Carbon|null $last_synced_at
  * @property string|null $sync_error
  * @property-read Product|null $product
