@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 
 final class LunarCjDropshippingServiceProvider extends ServiceProvider
@@ -33,5 +34,19 @@ final class LunarCjDropshippingServiceProvider extends ServiceProvider
                 Console\WebhooksSetupCommand::class,
             ]);
         }
+
+        // Defer scheduling until Schedule is actually resolved
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            if (! config('lunar-cjdropshipping.schedule.enabled')) {
+                return;
+            }
+
+            foreach (['cj:discover' => 'discover', 'cj:sync' => 'sync'] as $command => $key) {
+                $event = $schedule->command($command)->withoutOverlapping();
+                $frequency = (string) config("lunar-cjdropshipping.schedule.{$key}", 'daily');
+
+                method_exists($event, $frequency) ? $event->{$frequency}() : $event->daily();
+            }
+        });
     }
 }
