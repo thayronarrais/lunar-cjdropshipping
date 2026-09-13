@@ -104,6 +104,13 @@ final class ImportProductJob implements ShouldBeUnique, ShouldQueue
         } catch (Throwable $exception) {
             CjLog::channel()->warning('CJ webhook subscription failed', ['cj_product_id' => $result->link->cj_product_id, 'message' => $exception->getMessage()]);
         }
+
+        try {
+            $throttle->wait();
+            $cj->products()->addToMyProducts($result->link->cj_product_id);
+        } catch (Throwable $exception) {
+            CjLog::channel()->warning('CJ add to My Products failed', ['cj_product_id' => $result->link->cj_product_id, 'message' => $exception->getMessage()]);
+        }
     }
 
     private function markFailed(Candidate $candidate, string $message): void

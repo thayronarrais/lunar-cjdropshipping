@@ -32,6 +32,7 @@ final class LunarCjDropshippingServiceProvider extends ServiceProvider
             $this->publishes([self::CONFIG_PATH => $this->app->configPath('lunar-cjdropshipping.php')], 'lunar-cjdropshipping-config');
 
             $this->commands([
+                Console\AddToMyProductsCommand::class,
                 Console\DiscoverCommand::class,
                 Console\SyncCommand::class,
                 Console\WebhooksSetupCommand::class,

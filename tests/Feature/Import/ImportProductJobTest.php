@@ -44,7 +44,8 @@ final class ImportProductJobTest extends TestCase
     {
         Bus::fake([ImportProductImagesJob::class]);
         $this->cj->fixture('product-detail')->fixture('stock-by-pid')
-            ->success(['successProductIds' => ['p-100'], 'failProductIds' => [], 'subscribeAll' => false]);
+            ->success(['successProductIds' => ['p-100'], 'failProductIds' => [], 'subscribeAll' => false])
+            ->success(true);
 
         $this->runJob();
 
@@ -52,6 +53,8 @@ final class ImportProductJobTest extends TestCase
         Bus::assertDispatched(ImportProductImagesJob::class, fn (ImportProductImagesJob $job) => count($job->urls) === 2);
         $this->assertSame('webhook/product/subscribe', $this->cj->paths()[2]);
         $this->assertSame(['productIds' => ['p-100']], $this->cj->jsonAt(2));
+        $this->assertSame('product/addToMyProduct', $this->cj->paths()[3]);
+        $this->assertSame(['productId' => 'p-100'], $this->cj->jsonAt(3));
     }
 
     public function test_marks_unavailable_products_as_failed_without_retrying(): void
@@ -93,7 +96,19 @@ final class ImportProductJobTest extends TestCase
     public function test_a_failed_webhook_subscription_does_not_fail_the_import(): void
     {
         Bus::fake([ImportProductImagesJob::class]);
-        $this->cj->fixture('product-detail')->fixture('stock-by-pid')->error(1600000, 'System busy');
+        $this->cj->fixture('product-detail')->fixture('stock-by-pid')->error(1600000, 'System busy')->success(true);
+
+        $this->runJob();
+
+        $this->assertSame(CandidateStatus::Imported, $this->candidate->fresh()->status);
+    }
+
+    public function test_a_failed_add_to_my_products_does_not_fail_the_import(): void
+    {
+        Bus::fake([ImportProductImagesJob::class]);
+        $this->cj->fixture('product-detail')->fixture('stock-by-pid')
+            ->success(['successProductIds' => ['p-100'], 'failProductIds' => [], 'subscribeAll' => false])
+            ->error(1600000, 'The product has been added to My Products.');
 
         $this->runJob();
 
