@@ -6,8 +6,10 @@ namespace Thayron\LunarCjDropshipping\Filament\Resources;
 
 use Closure;
 use Filament\Forms;
+use Filament\Forms\Components\Component;
 use Filament\Forms\Get;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\PageRegistration;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Validation\ImplicitRule;
@@ -55,6 +57,9 @@ class ImportRuleResource extends BaseResource
             ->all();
     }
 
+    /**
+     * @return array<int, Component>
+     */
     protected static function getMainFormComponents(): array
     {
         $field = fn (string $key): string => __("lunar-cjdropshipping::admin.rules.fields.{$key}");
@@ -124,7 +129,12 @@ class ImportRuleResource extends BaseResource
                 Forms\Components\Select::make('collection_id')
                     ->label($field('collection_id'))
                     ->searchable()
-                    ->options(fn (): array => Collection::query()->get()->mapWithKeys(fn (Collection $collection) => [$collection->id => (string) ($collection->translateAttribute('name') ?? "#{$collection->id}")])->all()),
+                    ->options(function (): array {
+                        /** @var \Illuminate\Database\Eloquent\Collection<int, Collection> $collections */
+                        $collections = Collection::query()->get();
+
+                        return $collections->mapWithKeys(fn (Collection $collection) => [$collection->id => (string) ($collection->translateAttribute('name') ?? "#{$collection->id}")])->all();
+                    }),
             ]),
         ];
     }
@@ -176,6 +186,9 @@ class ImportRuleResource extends BaseResource
         ]);
     }
 
+    /**
+     * @return array<string, PageRegistration>
+     */
     public static function getDefaultPages(): array
     {
         return [

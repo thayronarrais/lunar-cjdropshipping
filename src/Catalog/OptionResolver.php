@@ -31,7 +31,8 @@ final class OptionResolver
 
     public function value(ProductOption $option, string $name): ProductOptionValue
     {
-        $locale = Language::getDefault()?->code ?? 'en';
+        $default = Language::getDefault();
+        $locale = $default !== null ? $default->code : 'en';
 
         $existing = $option->values()->where('name->'.$locale, $name)->first();
 

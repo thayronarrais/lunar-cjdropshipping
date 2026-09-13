@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Thayron\LunarCjDropshipping\Filament\Resources;
 
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\PageRegistration;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Eloquent\Model;
 use Lunar\Admin\Filament\Resources\ProductResource;
 use Lunar\Admin\Support\Resources\BaseResource;
 use Thayron\LunarCjDropshipping\Enums\CandidateStatus;
@@ -47,6 +49,9 @@ class CandidateResource extends BaseResource
         return false;
     }
 
+    /**
+     * @return Builder<Candidate>
+     */
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with('importRule');
@@ -141,12 +146,13 @@ class CandidateResource extends BaseResource
                     ->label(__('lunar-cjdropshipping::admin.candidates.actions.import'))
                     ->icon('heroicon-o-arrow-down-tray')
                     ->deselectRecordsAfterCompletion()
-                    ->action(fn (EloquentCollection $records) => static::approve($records)),
+                    ->action(fn (EloquentCollection $records) => static::approve($records->filter(fn (Model $model): bool => $model instanceof Candidate))),
                 Tables\Actions\BulkAction::make('ignore')
                     ->label(__('lunar-cjdropshipping::admin.candidates.actions.ignore'))
                     ->icon('heroicon-o-eye-slash')
                     ->deselectRecordsAfterCompletion()
                     ->action(fn (EloquentCollection $records) => $records
+                        ->filter(fn (Model $model): bool => $model instanceof Candidate)
                         ->filter(fn (Candidate $candidate) => in_array($candidate->status, [CandidateStatus::Pending, CandidateStatus::Failed], true))
                         ->each(fn (Candidate $candidate) => $candidate->forceFill(['status' => CandidateStatus::Ignored])->save())),
                 Tables\Actions\BulkAction::make('reset')
@@ -154,11 +160,15 @@ class CandidateResource extends BaseResource
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->deselectRecordsAfterCompletion()
                     ->action(fn (EloquentCollection $records) => $records
+                        ->filter(fn (Model $model): bool => $model instanceof Candidate)
                         ->filter(fn (Candidate $candidate) => in_array($candidate->status, [CandidateStatus::Ignored, CandidateStatus::Failed], true))
                         ->each(fn (Candidate $candidate) => $candidate->forceFill(['status' => CandidateStatus::Pending, 'error' => null])->save())),
             ]);
     }
 
+    /**
+     * @return array<string, PageRegistration>
+     */
     public static function getDefaultPages(): array
     {
         return [

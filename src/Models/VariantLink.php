@@ -6,6 +6,7 @@ namespace Thayron\LunarCjDropshipping\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Lunar\Models\ProductVariant;
 
 /**
@@ -16,7 +17,7 @@ use Lunar\Models\ProductVariant;
  * @property string|null $cj_sku
  * @property string|null $cost_usd
  * @property int $stock
- * @property \Illuminate\Support\Carbon|null $last_synced_at
+ * @property Carbon|null $last_synced_at
  * @property-read ProductLink $productLink
  * @property-read ProductVariant|null $variant
  */

@@ -20,8 +20,7 @@ final class ImportNewVariants
         private readonly VariantOptionParser $parser,
         private readonly OptionResolver $options,
         private readonly VariantWriter $variants,
-    ) {
-    }
+    ) {}
 
     public function handle(ProductLink $link): int
     {
@@ -41,7 +40,8 @@ final class ImportNewVariants
             $raw = $cjProduct->raw();
             $parsed = $this->parser->parse($raw['productKeyEn'] ?? null, $cjProduct->variants);
             $optionModels = array_map(fn (string $name) => $this->options->option($name), $parsed['options']);
-            $attached = $product->productOptions()->get()->modelKeys();
+            $productOptions = $product->productOptions();
+            $attached = $productOptions->pluck($productOptions->getRelated()->getQualifiedKeyName())->all();
 
             foreach ($optionModels as $position => $option) {
                 if (! in_array($option->id, $attached, true)) {

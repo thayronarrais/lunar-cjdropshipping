@@ -20,8 +20,7 @@ final class DiscoverCandidates
     public function __construct(
         private readonly CjClient $cj,
         private readonly Throttle $throttle,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{found: int, created: int, updated: int, skipped_ignored: int, already_imported: int}

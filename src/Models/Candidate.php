@@ -6,6 +6,7 @@ namespace Thayron\LunarCjDropshipping\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Lunar\Models\Product;
 use Thayron\LunarCjDropshipping\Enums\CandidateStatus;
 
@@ -23,7 +24,7 @@ use Thayron\LunarCjDropshipping\Enums\CandidateStatus;
  * @property string|null $error
  * @property int|null $lunar_product_id
  * @property array<string, mixed> $payload
- * @property \Illuminate\Support\Carbon $discovered_at
+ * @property Carbon $discovered_at
  * @property-read ImportRule $importRule
  */
 class Candidate extends Model

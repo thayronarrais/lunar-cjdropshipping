@@ -1,0 +1,15 @@
+<?php
+
+namespace Lunar\Base\Traits;
+
+/**
+ * Corrects Lunar\Base\Traits\HasDefaultRecord::getDefault(), whose real PHPDoc claims
+ * `@return self` even though the underlying query can return no default record.
+ */
+trait HasDefaultRecord
+{
+    /**
+     * @return self|null
+     */
+    public static function getDefault();
+}

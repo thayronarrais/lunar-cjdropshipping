@@ -11,9 +11,7 @@ use Throwable;
 
 final class ImportProductImages
 {
-    public function __construct(private readonly ImageDownloader $downloader)
-    {
-    }
+    public function __construct(private readonly ImageDownloader $downloader) {}
 
     /**
      * @param  array<array-key, string>  $urls

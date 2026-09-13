@@ -7,6 +7,7 @@ namespace Thayron\LunarCjDropshipping\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Lunar\Models\Brand;
 use Lunar\Models\Collection;
 use Lunar\Models\ProductType;
@@ -28,7 +29,7 @@ use Thayron\LunarCjDropshipping\Enums\PriceRounding;
  * @property int|null $brand_id
  * @property int|null $collection_id
  * @property int $max_pages
- * @property \Illuminate\Support\Carbon|null $last_run_at
+ * @property Carbon|null $last_run_at
  * @property array<string, mixed>|null $last_run_stats
  */
 class ImportRule extends Model

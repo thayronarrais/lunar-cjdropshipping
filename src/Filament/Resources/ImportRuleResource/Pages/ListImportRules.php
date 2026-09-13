@@ -12,6 +12,9 @@ class ListImportRules extends BaseListRecords
 {
     protected static string $resource = ImportRuleResource::class;
 
+    /**
+     * @return array<int, Actions\Action>
+     */
     protected function getDefaultHeaderActions(): array
     {
         return [

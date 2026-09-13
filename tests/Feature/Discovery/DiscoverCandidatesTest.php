@@ -6,6 +6,7 @@ namespace Thayron\LunarCjDropshipping\Tests\Feature\Discovery;
 
 use Illuminate\Support\Facades\Queue;
 use Lunar\Models\Product;
+use Thayron\CjDropshipping\CjClient;
 use Thayron\CjDropshipping\Exceptions\ServerException;
 use Thayron\LunarCjDropshipping\Actions\DiscoverCandidates;
 use Thayron\LunarCjDropshipping\Enums\CandidateStatus;
@@ -129,7 +130,7 @@ final class DiscoverCandidatesTest extends TestCase
     public function test_records_the_error_and_rethrows(): void
     {
         config(['cjdropshipping.max_retries' => 0]);
-        $this->app->forgetInstance(\Thayron\CjDropshipping\CjClient::class);
+        $this->app->forgetInstance(CjClient::class);
         $rule = $this->rule(['keyword' => 'x']);
         $this->cj->error(1600000, 'System busy')->error(1600000)->error(1600000);
 

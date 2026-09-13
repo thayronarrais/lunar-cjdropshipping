@@ -7,6 +7,8 @@ namespace Thayron\LunarCjDropshipping\Tests\Feature\Import;
 use Lunar\Models\Collection;
 use Lunar\Models\Price;
 use Lunar\Models\Product;
+use Lunar\Models\ProductOption;
+use Lunar\Models\ProductOptionValue;
 use Lunar\Models\ProductVariant;
 use Lunar\Models\TaxClass;
 use Thayron\LunarCjDropshipping\Actions\ImportProduct;
@@ -115,8 +117,8 @@ final class ImportProductTest extends TestCase
 
         app(ImportProduct::class)->handle($this->candidate(cjProductId: 'p-300'));
 
-        $this->assertSame(2, \Lunar\Models\ProductOption::query()->count());
-        $this->assertSame(4, \Lunar\Models\ProductOptionValue::query()->count());
+        $this->assertSame(2, ProductOption::query()->count());
+        $this->assertSame(4, ProductOptionValue::query()->count());
     }
 
     public function test_single_variant_products_have_no_options(): void

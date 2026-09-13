@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Thayron\LunarCjDropshipping\Filament\Resources;
 
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\PageRegistration;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Eloquent\Model;
 use Lunar\Admin\Filament\Resources\ProductResource;
 use Lunar\Admin\Support\Resources\BaseResource;
 use Thayron\LunarCjDropshipping\Actions\ImportNewVariants;
@@ -48,6 +50,9 @@ class ProductLinkResource extends BaseResource
         return false;
     }
 
+    /**
+     * @return Builder<ProductLink>
+     */
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with('product')->withCount('variantLinks');
@@ -131,10 +136,13 @@ class ProductLinkResource extends BaseResource
                     ->label(__('lunar-cjdropshipping::admin.links.actions.sync'))
                     ->icon('heroicon-o-arrow-path')
                     ->deselectRecordsAfterCompletion()
-                    ->action(fn (EloquentCollection $records) => static::queueSync($records)),
+                    ->action(fn (EloquentCollection $records) => static::queueSync($records->filter(fn (Model $model): bool => $model instanceof ProductLink))),
             ]);
     }
 
+    /**
+     * @return array<string, PageRegistration>
+     */
     public static function getDefaultPages(): array
     {
         return [

@@ -12,6 +12,9 @@ class EditImportRule extends BaseEditRecord
 {
     protected static string $resource = ImportRuleResource::class;
 
+    /**
+     * @return array<int, Actions\Action>
+     */
     protected function getDefaultHeaderActions(): array
     {
         return [

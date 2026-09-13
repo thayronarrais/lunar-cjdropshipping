@@ -27,8 +27,7 @@ final class VariantWriter
         private readonly PriceCalculator $prices,
         private readonly StockResolver $stock,
         private readonly MeasurementConverter $measurements,
-    ) {
-    }
+    ) {}
 
     /**
      * @param  list<string>  $values  option values in the same order as $options

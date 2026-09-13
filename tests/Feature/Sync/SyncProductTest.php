@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Tests\Feature\Sync;
 
+use Lunar\FieldTypes\Text;
+use Lunar\FieldTypes\TranslatedText;
 use Lunar\Models\Price;
 use Lunar\Models\ProductVariant;
 use Thayron\CjDropshipping\Exceptions\ServerException;
@@ -40,7 +42,7 @@ final class SyncProductTest extends TestCase
     public function test_updates_stock_and_recalculates_prices_when_cost_changes(): void
     {
         $product = $this->link->product;
-        $product->attribute_data->put('name', new \Lunar\FieldTypes\TranslatedText(collect(['en' => new \Lunar\FieldTypes\Text('Edited name')])));
+        $product->attribute_data->put('name', new TranslatedText(collect(['en' => new Text('Edited name')])));
         $product->save();
 
         $detail = FakeCj::data('product-detail');

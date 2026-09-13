@@ -67,7 +67,6 @@ final class ScheduleTest extends TestCase
         $this->assertSame('0 0 * * *', $this->cjEvents()['cj:sync']->expression);
     }
 
-
     /**
      * @return array<string, Event>
      */

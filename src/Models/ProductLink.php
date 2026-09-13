@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Lunar\Models\Product;
 use Thayron\LunarCjDropshipping\Enums\CjProductStatus;
 use Thayron\LunarCjDropshipping\Enums\PriceRounding;
@@ -22,10 +24,10 @@ use Thayron\LunarCjDropshipping\Enums\PriceRounding;
  * @property CjProductStatus $cj_status
  * @property int $not_found_count
  * @property list<string> $new_cj_variant_ids
- * @property \Illuminate\Support\Carbon|null $last_synced_at
+ * @property Carbon|null $last_synced_at
  * @property string|null $sync_error
  * @property-read Product|null $product
- * @property-read \Illuminate\Database\Eloquent\Collection<int, VariantLink> $variantLinks
+ * @property-read Collection<int, VariantLink> $variantLinks
  */
 class ProductLink extends Model
 {

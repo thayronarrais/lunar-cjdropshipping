@@ -25,8 +25,7 @@ final class SyncProduct
         private readonly Throttle $throttle,
         private readonly StockResolver $stock,
         private readonly VariantWriter $variants,
-    ) {
-    }
+    ) {}
 
     public function handle(ProductLink $link): void
     {

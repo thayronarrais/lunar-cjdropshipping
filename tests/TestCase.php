@@ -4,8 +4,15 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Tests;
 
+use Cartalyst\Converter\Laravel\ConverterServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Kalnoy\Nestedset\NestedSetServiceProvider;
+use Lunar\LunarServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Spatie\Activitylog\ActivitylogServiceProvider;
+use Spatie\LaravelBlink\BlinkServiceProvider;
+use Spatie\MediaLibrary\MediaLibraryServiceProvider;
+use Thayron\CjDropshipping\Laravel\CjDropshippingServiceProvider;
 use Thayron\LunarCjDropshipping\LunarCjDropshippingServiceProvider;
 
 abstract class TestCase extends Orchestra
@@ -17,13 +24,13 @@ abstract class TestCase extends Orchestra
     protected function getPackageProviders($app): array
     {
         return [
-            \Spatie\LaravelBlink\BlinkServiceProvider::class,
-            \Cartalyst\Converter\Laravel\ConverterServiceProvider::class,
-            \Kalnoy\Nestedset\NestedSetServiceProvider::class,
-            \Spatie\MediaLibrary\MediaLibraryServiceProvider::class,
-            \Spatie\Activitylog\ActivitylogServiceProvider::class,
-            \Lunar\LunarServiceProvider::class,
-            \Thayron\CjDropshipping\Laravel\CjDropshippingServiceProvider::class,
+            BlinkServiceProvider::class,
+            ConverterServiceProvider::class,
+            NestedSetServiceProvider::class,
+            MediaLibraryServiceProvider::class,
+            ActivitylogServiceProvider::class,
+            LunarServiceProvider::class,
+            CjDropshippingServiceProvider::class,
             LunarCjDropshippingServiceProvider::class,
         ];
     }

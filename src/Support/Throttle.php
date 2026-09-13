@@ -11,9 +11,7 @@ final class Throttle
 {
     private float $lastRequestAt = 0.0;
 
-    public function __construct(private readonly int $requestsPerSecond)
-    {
-    }
+    public function __construct(private readonly int $requestsPerSecond) {}
 
     public function wait(): void
     {

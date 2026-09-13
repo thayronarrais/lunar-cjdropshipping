@@ -14,6 +14,5 @@ final readonly class ImportResult
     public function __construct(
         public ProductLink $link,
         public array $imageUrls,
-    ) {
-    }
+    ) {}
 }

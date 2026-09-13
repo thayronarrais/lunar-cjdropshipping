@@ -34,8 +34,7 @@ final class ImportProduct
         private readonly VariantOptionParser $parser,
         private readonly OptionResolver $options,
         private readonly VariantWriter $variants,
-    ) {
-    }
+    ) {}
 
     public function handle(Candidate $candidate): ImportResult
     {
@@ -61,7 +60,7 @@ final class ImportProduct
 
         $imageUrls = $cjProduct->images !== [] ? $cjProduct->images : array_filter([$cjProduct->mainImage]);
 
-        return new ImportResult($link, array_values($imageUrls));
+        return new ImportResult($link, $imageUrls);
     }
 
     private function createProduct(ImportRule $rule, CjProduct $cjProduct, ProductInventory $inventory): ProductLink

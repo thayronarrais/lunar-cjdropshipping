@@ -4,9 +4,31 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Tests;
 
+use Awcodes\FilamentBadgeableColumn\BadgeableColumnServiceProvider;
+use Awcodes\Shout\ShoutServiceProvider;
+use Barryvdh\DomPDF\ServiceProvider;
+use BladeUI\Heroicons\BladeHeroiconsServiceProvider;
+use BladeUI\Icons\BladeIconsServiceProvider;
+use Filament\Actions\ActionsServiceProvider;
 use Filament\Facades\Filament;
+use Filament\FilamentServiceProvider;
+use Filament\Forms\FormsServiceProvider;
+use Filament\Infolists\InfolistsServiceProvider;
+use Filament\Notifications\NotificationsServiceProvider;
+use Filament\Support\SupportServiceProvider;
+use Filament\Tables\TablesServiceProvider;
+use Filament\Widgets\WidgetsServiceProvider;
+use Kirschbaum\PowerJoins\PowerJoinsServiceProvider;
+use Leandrocfe\FilamentApexCharts\FilamentApexChartsServiceProvider;
+use Livewire\LivewireServiceProvider;
+use Lunar\Admin\LunarPanelProvider;
 use Lunar\Admin\Models\Staff;
+use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
+use Spatie\LaravelPasskeys\LaravelPasskeysServiceProvider;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionServiceProvider;
+use Stephenjude\FilamentTwoFactorAuthentication\TwoFactorAuthenticationServiceProvider;
+use Technikermathe\LucideIcons\BladeLucideIconsServiceProvider;
 use Thayron\LunarCjDropshipping\Tests\Support\TestPanelProvider;
 
 abstract class FilamentTestCase extends TestCase
@@ -14,33 +36,33 @@ abstract class FilamentTestCase extends TestCase
     protected function getPackageProviders($app): array
     {
         $filament = array_values(array_filter([
-            \Livewire\LivewireServiceProvider::class,
-            \BladeUI\Icons\BladeIconsServiceProvider::class,
-            \BladeUI\Heroicons\BladeHeroiconsServiceProvider::class,
-            \Technikermathe\LucideIcons\BladeLucideIconsServiceProvider::class,
-            \RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider::class,
-            \Kirschbaum\PowerJoins\PowerJoinsServiceProvider::class,
-            \Filament\FilamentServiceProvider::class,
-            \Filament\Actions\ActionsServiceProvider::class,
-            \Filament\Forms\FormsServiceProvider::class,
-            \Filament\Infolists\InfolistsServiceProvider::class,
-            \Filament\Notifications\NotificationsServiceProvider::class,
-            \Filament\Support\SupportServiceProvider::class,
-            \Filament\Tables\TablesServiceProvider::class,
-            \Filament\Widgets\WidgetsServiceProvider::class,
-            \Awcodes\FilamentBadgeableColumn\BadgeableColumnServiceProvider::class,
-            \Awcodes\Shout\ShoutServiceProvider::class,
-            \Leandrocfe\FilamentApexCharts\FilamentApexChartsServiceProvider::class,
-            \Stephenjude\FilamentTwoFactorAuthentication\TwoFactorAuthenticationServiceProvider::class,
-            \Spatie\LaravelPasskeys\LaravelPasskeysServiceProvider::class,
-            \Barryvdh\DomPDF\ServiceProvider::class,
-            \Spatie\Permission\PermissionServiceProvider::class,
+            LivewireServiceProvider::class,
+            BladeIconsServiceProvider::class,
+            BladeHeroiconsServiceProvider::class,
+            BladeLucideIconsServiceProvider::class,
+            BladeCaptureDirectiveServiceProvider::class,
+            PowerJoinsServiceProvider::class,
+            FilamentServiceProvider::class,
+            ActionsServiceProvider::class,
+            FormsServiceProvider::class,
+            InfolistsServiceProvider::class,
+            NotificationsServiceProvider::class,
+            SupportServiceProvider::class,
+            TablesServiceProvider::class,
+            WidgetsServiceProvider::class,
+            BadgeableColumnServiceProvider::class,
+            ShoutServiceProvider::class,
+            FilamentApexChartsServiceProvider::class,
+            TwoFactorAuthenticationServiceProvider::class,
+            LaravelPasskeysServiceProvider::class,
+            ServiceProvider::class,
+            PermissionServiceProvider::class,
         ], fn (string $provider): bool => class_exists($provider)));
 
         return [
             ...$filament,
             ...parent::getPackageProviders($app),
-            \Lunar\Admin\LunarPanelProvider::class,
+            LunarPanelProvider::class,
             TestPanelProvider::class,
         ];
     }
