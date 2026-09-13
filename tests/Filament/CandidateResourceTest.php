@@ -95,6 +95,17 @@ final class CandidateResourceTest extends FilamentTestCase
         $this->assertSame(CandidateStatus::Imported, $imported->fresh()->status);
     }
 
+    public function test_bulk_reset_recovers_unavailable_candidates(): void
+    {
+        $unavailable = $this->candidate('p-1', CandidateStatus::Unavailable);
+
+        Livewire::test(ListCandidates::class)
+            ->filterTable('status', null)
+            ->callTableBulkAction('reset', [$unavailable]);
+
+        $this->assertSame(CandidateStatus::Pending, $unavailable->fresh()->status);
+    }
+
     public function test_bulk_ignore_skips_imported_candidates(): void
     {
         $pending = $this->candidate('p-1', CandidateStatus::Pending);
