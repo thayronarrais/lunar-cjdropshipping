@@ -51,7 +51,10 @@ final class CjCatalogOptions
                     continue;
                 }
 
-                $options[$warehouse->countryCode] = sprintf('%s (%s)', $warehouse->countryName ?? $warehouse->countryCode, $warehouse->countryCode);
+                $englishName = $warehouse->raw()['en'] ?? null;
+                $label = $warehouse->countryName ?? (is_string($englishName) && $englishName !== '' ? $englishName : $warehouse->countryCode);
+
+                $options[$warehouse->countryCode] = sprintf('%s (%s)', $label, $warehouse->countryCode);
             }
 
             asort($options);

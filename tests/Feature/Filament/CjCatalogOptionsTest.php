@@ -56,4 +56,15 @@ final class CjCatalogOptionsTest extends TestCase
 
         $this->assertSame(['US' => 'United States (US)'], CjCatalogOptions::countries());
     }
+
+    public function test_country_label_falls_back_to_translated_english_name(): void
+    {
+        $cj = FakeCj::install($this->app);
+        $cj->success([
+            ['areaId' => 2, 'areaEn' => null, 'countryCode' => 'GB', 'nameEn' => null, 'disabled' => null, 'en' => 'United Kingdom'],
+            ['areaId' => 4, 'areaEn' => null, 'countryCode' => 'DE', 'nameEn' => null, 'disabled' => null],
+        ]);
+
+        $this->assertSame(['DE' => 'DE (DE)', 'GB' => 'United Kingdom (GB)'], CjCatalogOptions::countries());
+    }
 }
