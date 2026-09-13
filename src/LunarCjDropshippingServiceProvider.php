@@ -13,6 +13,8 @@ final class LunarCjDropshippingServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(self::CONFIG_PATH, 'lunar-cjdropshipping');
+
+        $this->app->singleton(Support\Throttle::class, fn () => new Support\Throttle((int) config('lunar-cjdropshipping.requests_per_second', 1)));
     }
 
     public function boot(): void
@@ -21,6 +23,10 @@ final class LunarCjDropshippingServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->publishes([self::CONFIG_PATH => $this->app->configPath('lunar-cjdropshipping.php')], 'lunar-cjdropshipping-config');
+
+            $this->commands([
+                Console\DiscoverCommand::class,
+            ]);
         }
     }
 }

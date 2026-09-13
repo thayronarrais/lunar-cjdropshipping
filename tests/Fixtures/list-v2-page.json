@@ -1,0 +1,43 @@
+{
+    "code": 200,
+    "result": true,
+    "message": "Success",
+    "data": {
+        "pageSize": 100,
+        "pageNumber": 1,
+        "totalRecords": 2,
+        "totalPages": 1,
+        "content": [
+            {
+                "productList": [
+                    {
+                        "id": "p-100",
+                        "nameEn": "Magnetic Phone Case",
+                        "sku": "CJ-CASE",
+                        "bigImage": "https://cf.cjdropshipping.com/case-1.jpg",
+                        "sellPrice": "11.85",
+                        "categoryId": "cat-1",
+                        "listedNum": 40,
+                        "warehouseInventoryNum": 500,
+                        "verifiedWarehouse": 1
+                    },
+                    {
+                        "id": "p-200",
+                        "nameEn": "Cable Organizer",
+                        "sku": "CJ-CABLE",
+                        "bigImage": "https://cf.cjdropshipping.com/cable.jpg",
+                        "sellPrice": "1.20-3.50",
+                        "categoryId": "cat-1",
+                        "listedNum": 3,
+                        "warehouseInventoryNum": 3,
+                        "verifiedWarehouse": 2
+                    }
+                ],
+                "relatedCategoryList": [],
+                "keyWord": "",
+                "keyWordOld": ""
+            }
+        ]
+    },
+    "requestId": "list-v2-fixture"
+}

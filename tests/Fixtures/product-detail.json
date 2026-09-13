@@ -1,0 +1,48 @@
+{
+    "code": 200,
+    "result": true,
+    "message": "Success",
+    "data": {
+        "pid": "p-100",
+        "productNameEn": "Magnetic Phone Case",
+        "productSku": "CJ-CASE",
+        "productKeyEn": "Color-Size",
+        "bigImage": "https://cf.cjdropshipping.com/case-1.jpg",
+        "productImageSet": [
+            "https://cf.cjdropshipping.com/case-1.jpg",
+            "https://cf.cjdropshipping.com/case-2.jpg"
+        ],
+        "productWeight": "1580.0",
+        "categoryId": "cat-1",
+        "sellPrice": "8.13-10.00",
+        "description": "<p>Strong magnets</p>",
+        "status": "3",
+        "variants": [
+            {
+                "vid": "v-1",
+                "pid": "p-100",
+                "variantNameEn": "Magnetic Phone Case Black XL",
+                "variantSku": "CJ-CASE-BLK-XL",
+                "variantKey": "Black-XL",
+                "variantLength": 300,
+                "variantWidth": 200,
+                "variantHeight": 100,
+                "variantWeight": 1580,
+                "variantSellPrice": "10.00"
+            },
+            {
+                "vid": "v-2",
+                "pid": "p-100",
+                "variantNameEn": "Magnetic Phone Case Navy Blue M",
+                "variantSku": "CJ-CASE-NVY-M",
+                "variantKey": "Navy Blue-M",
+                "variantLength": 150,
+                "variantWidth": 80,
+                "variantHeight": 10,
+                "variantWeight": 120,
+                "variantSellPrice": "8.13"
+            }
+        ]
+    },
+    "requestId": "product-detail-fixture"
+}

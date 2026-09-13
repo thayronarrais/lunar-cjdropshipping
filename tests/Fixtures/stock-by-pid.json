@@ -1,0 +1,20 @@
+{
+    "success": true,
+    "code": 200,
+    "message": "",
+    "data": {
+        "inventories": [
+            {"areaEn": "US Warehouse", "areaId": 2, "countryCode": "US", "totalInventoryNum": 7}
+        ],
+        "variantInventories": [
+            {"vid": "v-1", "inventory": [
+                {"countryCode": "CN", "totalInventory": 100, "cjInventory": 0, "factoryInventory": 100, "verifiedWarehouse": 2},
+                {"countryCode": "US", "totalInventory": 7, "cjInventory": 7, "factoryInventory": 0, "verifiedWarehouse": 1}
+            ]},
+            {"vid": "v-2", "inventory": [
+                {"countryCode": "CN", "totalInventory": 20, "cjInventory": 0, "factoryInventory": 20, "verifiedWarehouse": 2}
+            ]}
+        ]
+    },
+    "requestId": "stock-by-pid-fixture"
+}
