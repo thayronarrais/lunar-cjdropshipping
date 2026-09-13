@@ -44,6 +44,19 @@ final class WebhooksSetupCommandTest extends TestCase
         $this->assertSame(['productIds' => ['p-100']], $this->cj->jsonAt(1));
     }
 
+    public function test_fails_gracefully_when_cj_rejects_the_request(): void
+    {
+        config(['app.url' => 'https://shop.example.com', 'cjdropshipping.max_retries' => 0]);
+        $this->cj = FakeCj::install($this->app);
+        $this->cj->error(1600000, 'System busy');
+
+        $this->artisan('cj:webhooks:setup')
+            ->expectsOutputToContain('System busy')
+            ->assertFailed();
+
+        $this->assertSame(['webhook/set'], $this->cj->paths());
+    }
+
     public function test_fails_when_the_app_url_is_not_https(): void
     {
         config(['app.url' => 'http://shop.example.com']);

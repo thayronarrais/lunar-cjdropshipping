@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Thayron\LunarCjDropshipping\Actions;
 
 use Illuminate\Support\Facades\DB;
+use Lunar\Models\Currency;
+use Lunar\Models\Price;
+use Lunar\Models\ProductVariant;
 use Thayron\CjDropshipping\CjClient;
 use Thayron\CjDropshipping\Data\Variant as CjVariant;
 use Thayron\CjDropshipping\Exceptions\NotFoundException;
@@ -45,6 +48,9 @@ final class SyncProduct
         $cjVariants = collect($cjProduct->variants)->keyBy(fn (CjVariant $variant) => $variant->id)->all();
 
         DB::transaction(function () use ($link, $cjProduct, $cjVariants, $inventory): void {
+            /** @var list<int> $enabledCurrencyIds */
+            $enabledCurrencyIds = Currency::query()->where('enabled', true)->pluck('id')->all();
+
             foreach ($link->variantLinks()->with('variant')->get() as $variantLink) {
                 $variant = $variantLink->variant;
 
@@ -65,7 +71,9 @@ final class SyncProduct
                 $cost = $this->variants->costFor($cjProduct, $cjVariant);
                 $variant->update(['stock' => $stock]);
 
-                if ($cost !== null && ($variantLink->cost_usd === null || bccomp($cost, (string) $variantLink->cost_usd, 2) !== 0)) {
+                $costChanged = $variantLink->cost_usd === null || ($cost !== null && bccomp($cost, (string) $variantLink->cost_usd, 2) !== 0);
+
+                if ($cost !== null && ($costChanged || $this->isMissingPrices($variant, $enabledCurrencyIds))) {
                     $this->variants->writePrices($variant, $cost, $link);
                 }
 
@@ -82,6 +90,25 @@ final class SyncProduct
                 'sync_error' => null,
             ])->save();
         });
+    }
+
+    /**
+     * Whether the variant lacks a base price (no customer group, min quantity 1) in any enabled currency.
+     *
+     * @param  list<int>  $enabledCurrencyIds
+     */
+    private function isMissingPrices(ProductVariant $variant, array $enabledCurrencyIds): bool
+    {
+        $priced = Price::query()
+            ->where('priceable_type', $variant->getMorphClass())
+            ->where('priceable_id', $variant->id)
+            ->whereNull('customer_group_id')
+            ->where('min_quantity', 1)
+            ->whereIn('currency_id', $enabledCurrencyIds)
+            ->distinct()
+            ->count('currency_id');
+
+        return $priced < count($enabledCurrencyIds);
     }
 
     private function recordNotFound(ProductLink $link): void

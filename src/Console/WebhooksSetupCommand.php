@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use InvalidArgumentException;
 use Thayron\CjDropshipping\CjClient;
 use Thayron\CjDropshipping\Criteria\WebhookSettings;
+use Thayron\CjDropshipping\Exceptions\CjException;
 use Thayron\LunarCjDropshipping\Models\ProductLink;
 
 final class WebhooksSetupCommand extends Command
@@ -30,17 +31,23 @@ final class WebhooksSetupCommand extends Command
 
         $this->line("Webhook URL: {$url}");
 
-        if (! $cj->webhooks()->configure($settings)) {
-            $this->error('CJdropshipping did not accept the webhook settings.');
+        try {
+            if (! $cj->webhooks()->configure($settings)) {
+                $this->error('CJdropshipping did not accept the webhook settings.');
+
+                return self::FAILURE;
+            }
+
+            $productIds = ProductLink::query()->pluck('cj_product_id')->all();
+
+            if ($productIds !== []) {
+                $result = $cj->webhooks()->subscribeProducts($productIds);
+                $this->info(sprintf('Subscribed %d product(s), %d failed.', count($result->successProductIds), count($result->failedProductIds)));
+            }
+        } catch (CjException $exception) {
+            $this->error($exception->getMessage());
 
             return self::FAILURE;
-        }
-
-        $productIds = ProductLink::query()->pluck('cj_product_id')->all();
-
-        if ($productIds !== []) {
-            $result = $cj->webhooks()->subscribeProducts($productIds);
-            $this->info(sprintf('Subscribed %d product(s), %d failed.', count($result->successProductIds), count($result->failedProductIds)));
         }
 
         return self::SUCCESS;

@@ -4,16 +4,21 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Tests\Feature\Sync;
 
+use Illuminate\Support\Facades\Bus;
 use Lunar\FieldTypes\Text;
 use Lunar\FieldTypes\TranslatedText;
+use Lunar\Jobs\Currencies\CreateCurrencyPrices;
+use Lunar\Models\Currency;
 use Lunar\Models\Price;
 use Lunar\Models\ProductVariant;
 use Thayron\CjDropshipping\Exceptions\ServerException;
 use Thayron\LunarCjDropshipping\Actions\SyncProduct;
 use Thayron\LunarCjDropshipping\Enums\CjProductStatus;
+use Thayron\LunarCjDropshipping\Enums\PriceRounding;
 use Thayron\LunarCjDropshipping\Jobs\SyncProductJob;
 use Thayron\LunarCjDropshipping\Models\ProductLink;
 use Thayron\LunarCjDropshipping\Models\VariantLink;
+use Thayron\LunarCjDropshipping\Pricing\PriceCalculator;
 use Thayron\LunarCjDropshipping\Tests\Support\CreatesLunarBaseline;
 use Thayron\LunarCjDropshipping\Tests\Support\FakeCj;
 use Thayron\LunarCjDropshipping\Tests\Support\ImportsFixtureProduct;
@@ -64,6 +69,24 @@ final class SyncProductTest extends TestCase
         $link = $this->link->fresh();
         $this->assertTrue($link->last_synced_at->isSameSecond(now()));
         $this->assertNull($link->sync_error);
+    }
+
+    public function test_writes_prices_for_newly_enabled_currencies_when_cost_is_unchanged(): void
+    {
+        // Lunar's own CreateCurrencyPrices job would copy default prices into the new currency;
+        // fake it to reproduce a currency whose variants have no price row yet.
+        Bus::fake([CreateCurrencyPrices::class]);
+        $black = $this->variant('CJ-CASE-BLK-XL');
+        $eurBefore = $this->prices($black)['EUR'];
+        $chf = Currency::factory()->create(['code' => 'CHF', 'name' => 'Swiss Franc', 'exchange_rate' => 0.95, 'decimal_places' => 2, 'enabled' => true, 'default' => false]);
+        $this->assertArrayNotHasKey('CHF', $this->prices($black));
+        $this->cj->fixture('product-detail')->fixture('stock-by-pid');
+
+        app(SyncProduct::class)->handle($this->link);
+
+        $this->assertSame(app(PriceCalculator::class)->priceFor('10.00', '100', PriceRounding::Ends90, $chf), $this->prices($black)['CHF']);
+        $this->assertArrayHasKey('CHF', $this->prices($this->variant('CJ-CASE-NVY-M')));
+        $this->assertSame($eurBefore, $this->prices($black)['EUR']);
     }
 
     public function test_variant_missing_on_cj_gets_zero_stock_and_new_variants_are_only_recorded(): void

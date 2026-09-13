@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Actions;
 
+use Illuminate\Support\Str;
 use Thayron\CjDropshipping\CjClient;
 use Thayron\CjDropshipping\Criteria\ProductSearch;
 use Thayron\CjDropshipping\Data\ProductSummary;
@@ -119,7 +120,7 @@ final class DiscoverCandidates
 
         $candidate->fill([
             'cj_sku' => $summary->sku,
-            'name' => $summary->name ?? $summary->sku ?? $summary->id,
+            'name' => Str::limit($summary->name ?? $summary->sku ?? $summary->id, 255, ''),
             'image_url' => $summary->image,
             'cost_usd' => CostParser::lowest($summary->sellPrice),
             'warehouse_stock' => $summary->warehouseInventory,

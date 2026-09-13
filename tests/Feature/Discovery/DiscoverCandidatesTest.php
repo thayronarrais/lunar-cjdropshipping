@@ -123,6 +123,18 @@ final class DiscoverCandidatesTest extends TestCase
         $this->assertNull($existing->lunar_product_id);
     }
 
+    public function test_truncates_long_cj_names_to_255_characters(): void
+    {
+        $rule = $this->rule(['keyword' => 'x']);
+        $this->cj->fixtureWith('list-v2-page', [
+            'content' => [['productList' => [['nameEn' => str_repeat('a', 300)]]]],
+        ]);
+
+        app(DiscoverCandidates::class)->handle($rule);
+
+        $this->assertSame(255, mb_strlen(Candidate::query()->where('cj_product_id', 'p-100')->sole()->name));
+    }
+
     public function test_updates_pending_candidates_on_rerun(): void
     {
         $rule = $this->rule(['keyword' => 'x']);
