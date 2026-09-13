@@ -97,6 +97,11 @@ class CandidateResource extends BaseResource
                     ->options(collect(CandidateSource::cases())->mapWithKeys(fn (CandidateSource $source) => [$source->value => __('lunar-cjdropshipping::admin.candidates.source.'.$source->value)])->all()),
             ])
             ->actions([
+                Tables\Actions\Action::make('confirm')
+                    ->label(__('lunar-cjdropshipping::admin.candidates.actions.confirm'))
+                    ->icon('heroicon-o-check-badge')
+                    ->visible(fn (Candidate $record): bool => in_array($record->status, [CandidateStatus::Pending, CandidateStatus::Failed], true))
+                    ->url(fn (Candidate $record): string => static::getUrl('confirm', ['record' => $record])),
                 Tables\Actions\Action::make('ignore')
                     ->label(__('lunar-cjdropshipping::admin.candidates.actions.ignore'))
                     ->icon('heroicon-o-eye-slash')
@@ -136,6 +141,7 @@ class CandidateResource extends BaseResource
     {
         return [
             'index' => Pages\ListCandidates::route('/'),
+            'confirm' => Pages\ConfirmListing::route('/{record}/confirm'),
         ];
     }
 }

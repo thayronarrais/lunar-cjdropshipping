@@ -9,6 +9,7 @@ use Livewire\Livewire;
 use Thayron\LunarCjDropshipping\Enums\CandidateSource;
 use Thayron\LunarCjDropshipping\Enums\CandidateStatus;
 use Thayron\LunarCjDropshipping\Enums\PriceRounding;
+use Thayron\LunarCjDropshipping\Filament\Resources\CandidateResource;
 use Thayron\LunarCjDropshipping\Filament\Resources\CandidateResource\Pages\ListCandidates;
 use Thayron\LunarCjDropshipping\Models\Candidate;
 use Thayron\LunarCjDropshipping\Models\ImportRule;
@@ -47,6 +48,15 @@ final class CandidateResourceTest extends FilamentTestCase
             ->filterTable('source', 'catalog')
             ->assertCanSeeTableRecords([$fromCatalog])
             ->assertCanNotSeeTableRecords([$fromRule]);
+    }
+
+    public function test_confirm_action_opens_the_confirmation_page(): void
+    {
+        $pending = $this->candidate('p-1', CandidateStatus::Pending);
+
+        Livewire::test(ListCandidates::class)
+            ->assertTableActionVisible('confirm', $pending)
+            ->assertTableActionHasUrl('confirm', CandidateResource::getUrl('confirm', ['record' => $pending]), $pending);
     }
 
     public function test_has_no_direct_import_actions(): void
