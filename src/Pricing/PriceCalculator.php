@@ -34,7 +34,7 @@ final class PriceCalculator
     public function priceFor(string $costUsd, string $markupPercent, PriceRounding $rounding, Currency $currency, ?string $usdRate = null): int
     {
         $usdRate ??= $this->usdRate();
-        $currencyRate = $currency->default ? '1' : self::decimal($currency->exchange_rate);
+        $currencyRate = $this->currencyRate($currency);
         $multiplier = bcadd('1', bcdiv(self::decimal($markupPercent), '100', self::SCALE), self::SCALE);
 
         $major = bcmul(bcmul(bcmul(self::decimal($costUsd), $multiplier, self::SCALE), $usdRate, self::SCALE), $currencyRate, self::SCALE);
@@ -66,6 +66,19 @@ final class PriceCalculator
         }
 
         throw new PricingException('Cannot convert CJdropshipping USD costs: create a USD currency in Lunar or set lunar-cjdropshipping.pricing.usd_to_default_rate.');
+    }
+
+    /**
+     * Value of 1 USD in the given currency.
+     */
+    public function usdToCurrencyRate(Currency $currency): string
+    {
+        return bcmul($this->usdRate(), $this->currencyRate($currency), self::SCALE);
+    }
+
+    private function currencyRate(Currency $currency): string
+    {
+        return $currency->default ? '1' : self::decimal($currency->exchange_rate);
     }
 
     private function round(string $major, int $decimalPlaces, PriceRounding $rounding): int
