@@ -128,4 +128,20 @@ return [
             'new_variants_requested' => 'Import of new variants requested.',
         ],
     ],
+    'listing' => [
+        'errors' => [
+            'not_confirmable' => 'Only pending or failed items can be confirmed.',
+            'name_required' => 'Enter the product name.',
+            'name_too_long' => 'The name may not be longer than 255 characters.',
+            'countries_required' => 'Choose where to ship from and to.',
+            'currency_invalid' => 'Choose an enabled currency.',
+            'method_required' => 'Quote shipping and choose a method.',
+            'product_type_required' => 'Choose a product type.',
+            'no_variants' => 'Select at least one variant.',
+            'price_required' => 'Every selected variant needs a price above zero.',
+            'shipping_missing' => 'The chosen method cannot ship variant :sku.',
+            'cost_missing' => 'CJ has no cost for variant :sku.',
+            'negative_margin' => 'Some prices are below cost. Tick "I accept a negative margin" to continue.',
+        ],
+    ],
 ];

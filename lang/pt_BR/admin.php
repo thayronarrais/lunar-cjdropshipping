@@ -128,4 +128,20 @@ return [
             'new_variants_requested' => 'Importação das variantes novas solicitada.',
         ],
     ],
+    'listing' => [
+        'errors' => [
+            'not_confirmable' => 'Só itens pendentes ou com falha podem ser confirmados.',
+            'name_required' => 'Informe o nome do produto.',
+            'name_too_long' => 'O nome pode ter no máximo 255 caracteres.',
+            'countries_required' => 'Escolha de onde e para onde enviar.',
+            'currency_invalid' => 'Escolha uma moeda ativa.',
+            'method_required' => 'Cote o frete e escolha um método.',
+            'product_type_required' => 'Escolha um tipo de produto.',
+            'no_variants' => 'Selecione pelo menos uma variação.',
+            'price_required' => 'Toda variação selecionada precisa de um preço acima de zero.',
+            'shipping_missing' => 'O método escolhido não envia a variação :sku.',
+            'cost_missing' => 'A CJ não tem custo para a variação :sku.',
+            'negative_margin' => 'Há preços abaixo do custo. Marque "Aceito margem negativa" para continuar.',
+        ],
+    ],
 ];
