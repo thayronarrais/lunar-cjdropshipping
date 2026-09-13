@@ -61,6 +61,16 @@ final class FakeCj
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    public static function data(string $name): array
+    {
+        $envelope = json_decode((string) file_get_contents(__DIR__."/../Fixtures/{$name}.json"), true);
+
+        return $envelope['data'];
+    }
+
+    /**
      * @param  array<string, mixed>  $overrides  merged into the fixture "data"
      */
     public function fixtureWith(string $name, array $overrides): self
