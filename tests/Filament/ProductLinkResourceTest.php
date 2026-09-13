@@ -91,4 +91,12 @@ final class ProductLinkResourceTest extends FilamentTestCase
         Queue::assertPushedOn('cjdropshipping', ImportNewVariantsJob::class);
         $this->assertSame(['v-3'], $this->link->fresh()->new_cj_variant_ids);
     }
+
+    public function test_hides_import_new_variants_action_for_a_price_locked_link(): void
+    {
+        $this->link->forceFill(['new_cj_variant_ids' => ['v-3'], 'price_locked' => true])->save();
+
+        Livewire::test(ListProductLinks::class)
+            ->assertTableActionHidden('import_new_variants', $this->link);
+    }
 }

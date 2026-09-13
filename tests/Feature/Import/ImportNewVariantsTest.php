@@ -60,4 +60,17 @@ final class ImportNewVariantsTest extends TestCase
         $this->assertSame(0, app(ImportNewVariants::class)->handle($link));
         $this->assertCount(2, $this->cj->requests());
     }
+
+    public function test_does_nothing_for_a_price_locked_link(): void
+    {
+        $link = $this->importFixtureProduct();
+        $link->forceFill(['new_cj_variant_ids' => ['v-3'], 'price_locked' => true])->save();
+
+        $created = app(ImportNewVariants::class)->handle($link);
+
+        $this->assertSame(0, $created);
+        $this->assertCount(2, $this->cj->requests());
+        $this->assertSame(['v-3'], $link->fresh()->new_cj_variant_ids);
+        $this->assertSame(2, $link->product->variants()->count());
+    }
 }

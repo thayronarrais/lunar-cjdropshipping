@@ -129,7 +129,7 @@ class ProductLinkResource extends BaseResource
                 Tables\Actions\Action::make('import_new_variants')
                     ->label(__('lunar-cjdropshipping::admin.links.actions.import_new_variants'))
                     ->icon('heroicon-o-plus-circle')
-                    ->visible(fn (ProductLink $record): bool => $record->new_cj_variant_ids !== [])
+                    ->visible(fn (ProductLink $record): bool => $record->new_cj_variant_ids !== [] && ! $record->price_locked)
                     ->requiresConfirmation()
                     ->action(function (ProductLink $record): void {
                         ImportNewVariantsJob::dispatch($record);

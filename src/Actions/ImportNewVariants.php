@@ -27,7 +27,7 @@ final class ImportNewVariants
         $pending = $link->new_cj_variant_ids;
         $product = $link->product;
 
-        if ($pending === [] || $product === null) {
+        if ($pending === [] || $product === null || $link->price_locked) {
             return 0;
         }
 
