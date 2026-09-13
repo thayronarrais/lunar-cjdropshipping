@@ -22,6 +22,7 @@ final class LunarCjDropshippingServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadRoutesFrom(__DIR__.'/../routes/webhooks.php');
 
         if ($this->app->runningInConsole()) {
             $this->publishes([self::CONFIG_PATH => $this->app->configPath('lunar-cjdropshipping.php')], 'lunar-cjdropshipping-config');
@@ -29,6 +30,7 @@ final class LunarCjDropshippingServiceProvider extends ServiceProvider
             $this->commands([
                 Console\DiscoverCommand::class,
                 Console\SyncCommand::class,
+                Console\WebhooksSetupCommand::class,
             ]);
         }
     }
