@@ -146,7 +146,9 @@ class CandidateResource extends BaseResource
                     ->label(__('lunar-cjdropshipping::admin.candidates.actions.ignore'))
                     ->icon('heroicon-o-eye-slash')
                     ->deselectRecordsAfterCompletion()
-                    ->action(fn (EloquentCollection $records) => $records->each(fn (Candidate $candidate) => $candidate->forceFill(['status' => CandidateStatus::Ignored])->save())),
+                    ->action(fn (EloquentCollection $records) => $records
+                        ->filter(fn (Candidate $candidate) => in_array($candidate->status, [CandidateStatus::Pending, CandidateStatus::Failed], true))
+                        ->each(fn (Candidate $candidate) => $candidate->forceFill(['status' => CandidateStatus::Ignored])->save())),
                 Tables\Actions\BulkAction::make('reset')
                     ->label(__('lunar-cjdropshipping::admin.candidates.actions.reset'))
                     ->icon('heroicon-o-arrow-uturn-left')

@@ -72,7 +72,7 @@ return [
             'reset' => 'Back to pending',
             'retry' => 'Try again',
             'open' => 'Open in Lunar',
-            'import_queued' => ':count product(s) queued for import.',
+            'import_queued' => ':count product(s) sent for import. Products already queued are skipped.',
         ],
     ],
     'links' => [
@@ -99,7 +99,7 @@ return [
         ],
         'actions' => [
             'sync' => 'Sync now',
-            'sync_queued' => ':count sync job(s) queued.',
+            'sync_queued' => ':count sync request(s) sent. Products already queued are skipped.',
             'import_new_variants' => 'Import new variants',
             'new_variants_imported' => ':count variant(s) imported.',
             'new_variants_failed' => 'Could not import new variants: :message',

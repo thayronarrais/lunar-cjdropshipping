@@ -33,6 +33,8 @@ final class ImportProductJob implements ShouldBeUnique, ShouldQueue
 
     public int $tries = 3;
 
+    public int $uniqueFor = 3600;
+
     /** @var list<int> */
     public array $backoff = [60, 300];
 

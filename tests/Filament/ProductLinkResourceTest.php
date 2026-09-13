@@ -59,10 +59,11 @@ final class ProductLinkResourceTest extends FilamentTestCase
 
         Livewire::test(ListProductLinks::class)->callTableAction('sync', $this->link);
 
-        // SyncProductJob is ShouldBeUnique; Queue::fake() still runs the PendingDispatch
-        // unique-lock check (it only fakes the actual push), so the lock acquired above
-        // is never released by a real worker. Release it here so the bulk action below
-        // is not silently deduped against the row action's dispatch for the same link.
+        // SyncProductJob is intentionally ShouldBeUnique; Queue::fake() still runs the
+        // PendingDispatch unique-lock check (it only fakes the actual push), so the lock
+        // acquired above is never released by a real worker. Release it here to simulate
+        // the first job having already been processed, so the bulk action below is
+        // dispatched as a fresh request rather than deduped against the row action above.
         app(UniqueLock::class)->release(new SyncProductJob($this->link));
 
         Livewire::test(ListProductLinks::class)->callTableBulkAction('sync', [$this->link]);

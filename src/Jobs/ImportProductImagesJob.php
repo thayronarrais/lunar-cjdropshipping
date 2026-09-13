@@ -25,6 +25,8 @@ final class ImportProductImagesJob implements ShouldBeUnique, ShouldQueue
 
     public int $backoff = 60;
 
+    public int $uniqueFor = 3600;
+
     /**
      * @param  list<string>  $urls
      */

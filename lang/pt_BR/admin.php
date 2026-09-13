@@ -72,7 +72,7 @@ return [
             'reset' => 'Voltar para pendente',
             'retry' => 'Tentar de novo',
             'open' => 'Abrir no Lunar',
-            'import_queued' => ':count produto(s) enviados para importação.',
+            'import_queued' => ':count produto(s) enviados para importação. Produtos já na fila são ignorados.',
         ],
     ],
     'links' => [
@@ -99,7 +99,7 @@ return [
         ],
         'actions' => [
             'sync' => 'Sincronizar agora',
-            'sync_queued' => ':count sincronização(ões) enviadas para a fila.',
+            'sync_queued' => ':count sincronização(ões) solicitada(s). Produtos já na fila são ignorados.',
             'import_new_variants' => 'Importar variantes novas',
             'new_variants_imported' => ':count variante(s) importada(s).',
             'new_variants_failed' => 'Não foi possível importar as variantes novas: :message',
