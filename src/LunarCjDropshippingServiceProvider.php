@@ -15,6 +15,8 @@ final class LunarCjDropshippingServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(self::CONFIG_PATH, 'lunar-cjdropshipping');
 
         $this->app->singleton(Support\Throttle::class, fn () => new Support\Throttle((int) config('lunar-cjdropshipping.requests_per_second', 1)));
+
+        $this->app->bind(Media\ImageDownloader::class, Media\HttpImageDownloader::class);
     }
 
     public function boot(): void
