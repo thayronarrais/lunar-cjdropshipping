@@ -48,7 +48,9 @@ final class FakeCj
             new DateTimeImmutable('+170 days'),
             self::OPEN_ID,
         );
-        Cache::put(TokenManager::storeKeyFor((string) config('cjdropshipping.api_key')), $token->toArray(), 3600);
+        // Stored forever (not the token's own ~10 day expiry): tests that travel() the
+        // clock forward must not have this cache entry expire out from under them.
+        Cache::put(TokenManager::storeKeyFor((string) config('cjdropshipping.api_key')), $token->toArray(), null);
 
         return $fake;
     }

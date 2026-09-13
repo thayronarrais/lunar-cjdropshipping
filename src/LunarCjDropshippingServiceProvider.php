@@ -28,6 +28,7 @@ final class LunarCjDropshippingServiceProvider extends ServiceProvider
 
             $this->commands([
                 Console\DiscoverCommand::class,
+                Console\SyncCommand::class,
             ]);
         }
     }
