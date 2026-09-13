@@ -41,7 +41,7 @@ Migration (new, does not edit the original):
   - `listing` json nullable — the confirmed listing (see below).
   - `listed_at` timestamp nullable.
   - `CandidateStatus` reuses `approved` for "listing confirmed, import job dispatched" and gains `unavailable` (removed on CJ). Existing: `pending`, `approved`, `importing`, `imported`, `failed`, `ignored`.
-- `cj_product_links`: `ship_from_country` (2), `ship_to_country` (2), `shipping_method` string nullable, `currency_code` (3) nullable, `price_locked` bool default false, `margin_at_risk` bool default false (indexed). Existing rows keep `price_locked = false` → current behaviour unchanged for the 13 imported products.
+- `cj_product_links`: `ship_from_country` (2), `ship_to_country` (2), `shipping_method` string nullable, `currency_code` (3) nullable, `price_locked` bool default false, `margin_at_risk` bool default false (indexed), `skipped_cj_variant_ids` json nullable (variants left unselected at listing time; sync excludes them from `new_cj_variant_ids`). Existing rows keep `price_locked = false` → current behaviour unchanged for the 13 imported products.
 - `cj_variant_links`: `shipping_cost_usd` decimal(12,2) nullable, `price` decimal(12,2) nullable (confirmed price in link currency).
 
 `listing` JSON shape:
