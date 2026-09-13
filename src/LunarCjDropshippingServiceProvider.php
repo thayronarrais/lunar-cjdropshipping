@@ -11,6 +11,8 @@ final class LunarCjDropshippingServiceProvider extends ServiceProvider
 {
     private const CONFIG_PATH = __DIR__.'/../config/lunar-cjdropshipping.php';
 
+    private const SCHEDULE_FREQUENCIES = ['everyMinute', 'everyTwoMinutes', 'everyFiveMinutes', 'everyTenMinutes', 'everyFifteenMinutes', 'everyThirtyMinutes', 'hourly', 'everyTwoHours', 'everyThreeHours', 'everyFourHours', 'everySixHours', 'daily', 'weekly', 'monthly', 'quarterly', 'yearly'];
+
     public function register(): void
     {
         $this->mergeConfigFrom(self::CONFIG_PATH, 'lunar-cjdropshipping');
@@ -45,7 +47,7 @@ final class LunarCjDropshippingServiceProvider extends ServiceProvider
                 $event = $schedule->command($command)->withoutOverlapping();
                 $frequency = (string) config("lunar-cjdropshipping.schedule.{$key}", 'daily');
 
-                method_exists($event, $frequency) ? $event->{$frequency}() : $event->daily();
+                in_array($frequency, self::SCHEDULE_FREQUENCIES, true) ? $event->{$frequency}() : $event->daily();
             }
         });
     }

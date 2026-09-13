@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Tests\Feature;
 
-use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
 use Thayron\LunarCjDropshipping\Tests\TestCase;
 

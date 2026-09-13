@@ -28,6 +28,16 @@ final class ScheduleTest extends TestCase
         $app['config']->set('lunar-cjdropshipping.schedule.sync', 'whenever');
     }
 
+    protected function eventMethodFrequency($app): void
+    {
+        $app['config']->set('lunar-cjdropshipping.schedule.sync', 'onOneServer');
+    }
+
+    protected function argumentedMethodFrequency($app): void
+    {
+        $app['config']->set('lunar-cjdropshipping.schedule.sync', 'dailyAt');
+    }
+
     public function test_schedules_discovery_and_sync(): void
     {
         $events = $this->cjEvents();
@@ -39,6 +49,20 @@ final class ScheduleTest extends TestCase
 
     #[DefineEnvironment('invalidFrequency')]
     public function test_invalid_frequencies_fall_back_to_daily(): void
+    {
+        $this->assertSame('0 0 * * *', $this->cjEvents()['cj:sync']->expression);
+    }
+
+    #[DefineEnvironment('eventMethodFrequency')]
+    public function test_non_frequency_event_methods_fall_back_to_daily(): void
+    {
+        $events = $this->cjEvents();
+        $this->assertSame('0 0 * * *', $events['cj:sync']->expression);
+        $this->assertFalse($events['cj:sync']->onOneServer);
+    }
+
+    #[DefineEnvironment('argumentedMethodFrequency')]
+    public function test_methods_requiring_arguments_fall_back_to_daily(): void
     {
         $this->assertSame('0 0 * * *', $this->cjEvents()['cj:sync']->expression);
     }
