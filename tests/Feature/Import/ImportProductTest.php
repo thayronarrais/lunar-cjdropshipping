@@ -12,11 +12,14 @@ use Lunar\Models\ProductOptionValue;
 use Lunar\Models\ProductVariant;
 use Lunar\Models\TaxClass;
 use Thayron\LunarCjDropshipping\Actions\ImportProduct;
+use Thayron\LunarCjDropshipping\Enums\CandidateSource;
 use Thayron\LunarCjDropshipping\Enums\CandidateStatus;
 use Thayron\LunarCjDropshipping\Enums\CjProductStatus;
 use Thayron\LunarCjDropshipping\Enums\PriceRounding;
 use Thayron\LunarCjDropshipping\Exceptions\ImportException;
 use Thayron\LunarCjDropshipping\Exceptions\PricingException;
+use Thayron\LunarCjDropshipping\Listing\Listing;
+use Thayron\LunarCjDropshipping\Listing\ListingVariant;
 use Thayron\LunarCjDropshipping\Models\Candidate;
 use Thayron\LunarCjDropshipping\Models\ImportRule;
 use Thayron\LunarCjDropshipping\Models\ProductLink;
@@ -196,6 +199,90 @@ final class ImportProductTest extends TestCase
         $this->expectExceptionMessage('default tax class');
 
         app(ImportProduct::class)->handle($this->candidate());
+    }
+
+    public function test_imports_only_the_selected_variants_with_confirmed_prices(): void
+    {
+        $this->createLunarBaseline();
+        $candidate = $this->listedCandidate([
+            new ListingVariant('v-1', true, '10.00', '5.43', '24.99'),
+            new ListingVariant('v-2', false, '8.13', '2.10', null),
+        ]);
+        $this->cj->fixture('product-detail')->fixture('stock-by-pid');
+
+        $result = app(ImportProduct::class)->handle($candidate);
+
+        $product = Product::query()->sole();
+        $this->assertSame('draft', $product->status);
+        $this->assertSame('Plaid Dog Jacket', $product->translateAttribute('name', 'en'));
+        $this->assertSame(1, $product->variants()->count());
+
+        $black = ProductVariant::query()->where('sku', 'CJ-CASE-BLK-XL')->sole();
+        $this->assertSame(['GBP' => 2499], $this->prices($black));
+        $this->assertSame(100, (int) $black->stock);
+
+        $link = $result->link->fresh();
+        $this->assertNull($link->import_rule_id);
+        $this->assertTrue($link->price_locked);
+        $this->assertSame('CN', $link->country_code);
+        $this->assertSame('CN', $link->ship_from_country);
+        $this->assertSame('GB', $link->ship_to_country);
+        $this->assertSame('CJPacket Ordinary', $link->shipping_method);
+        $this->assertSame('GBP', $link->currency_code);
+        $this->assertSame('100.00', $link->markup_percent);
+        $this->assertSame(PriceRounding::Ends99, $link->rounding);
+        $this->assertSame(['v-2'], $link->skipped_cj_variant_ids);
+
+        $variantLink = VariantLink::query()->where('cj_variant_id', 'v-1')->sole();
+        $this->assertSame('5.43', $variantLink->shipping_cost_usd);
+        $this->assertSame('24.99', $variantLink->price);
+        $this->assertSame(0, VariantLink::query()->where('cj_variant_id', 'v-2')->count());
+
+        $this->assertSame(CandidateStatus::Imported, $candidate->fresh()->status);
+    }
+
+    public function test_fails_when_a_selected_variant_is_gone_from_cj(): void
+    {
+        $this->createLunarBaseline();
+        $candidate = $this->listedCandidate([new ListingVariant('v-404', true, '10.00', '5.43', '24.99')]);
+        $this->cj->fixture('product-detail')->fixture('stock-by-pid');
+
+        $this->expectException(ImportException::class);
+        $this->expectExceptionMessage('no longer available');
+
+        try {
+            app(ImportProduct::class)->handle($candidate);
+        } finally {
+            $this->assertSame(0, Product::withTrashed()->count());
+        }
+    }
+
+    /**
+     * @param  list<ListingVariant>  $variants
+     */
+    private function listedCandidate(array $variants): Candidate
+    {
+        return Candidate::create([
+            'cj_product_id' => 'p-100',
+            'source' => CandidateSource::Catalog,
+            'name' => 'Plaid Dog Jacket',
+            'status' => CandidateStatus::Approved,
+            'payload' => [],
+            'discovered_at' => now(),
+            'listing' => (new Listing(
+                name: 'Plaid Dog Jacket',
+                shipFromCountry: 'CN',
+                shipToCountry: 'GB',
+                currencyCode: 'GBP',
+                shippingMethod: 'CJPacket Ordinary',
+                markupPercent: '100.00',
+                rounding: PriceRounding::Ends99,
+                productTypeId: $this->productType->id,
+                brandId: null,
+                collectionId: null,
+                variants: $variants,
+            ))->toArray(),
+        ]);
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Catalog;
 
+use Lunar\Models\Currency;
 use Lunar\Models\Price;
 use Lunar\Models\Product;
 use Lunar\Models\ProductOption;
@@ -13,6 +14,7 @@ use Thayron\CjDropshipping\Data\Product as CjProduct;
 use Thayron\CjDropshipping\Data\ProductInventory;
 use Thayron\CjDropshipping\Data\Variant as CjVariant;
 use Thayron\LunarCjDropshipping\Exceptions\ImportException;
+use Thayron\LunarCjDropshipping\Listing\ListingVariant;
 use Thayron\LunarCjDropshipping\Mapping\MeasurementConverter;
 use Thayron\LunarCjDropshipping\Mapping\StockResolver;
 use Thayron\LunarCjDropshipping\Models\ProductLink;
@@ -32,8 +34,9 @@ final class VariantWriter
     /**
      * @param  list<string>  $values  option values in the same order as $options
      * @param  list<ProductOption>  $options
+     * @param  ListingVariant|null  $listed  confirmed listing prices; null prices from the link markup
      */
-    public function create(Product $product, ProductLink $link, CjProduct $cjProduct, CjVariant $cjVariant, array $values, array $options, ProductInventory $inventory): VariantLink
+    public function create(Product $product, ProductLink $link, CjProduct $cjProduct, CjVariant $cjVariant, array $values, array $options, ProductInventory $inventory, ?ListingVariant $listed = null): VariantLink
     {
         $taxClass = TaxClass::getDefault() ?? throw new ImportException('Lunar has no default tax class.');
         $stock = $this->stock->forVariant($inventory, $cjVariant->id, $link->country_code);
@@ -64,7 +67,15 @@ final class VariantWriter
         }
 
         $cost = $this->costFor($cjProduct, $cjVariant) ?? throw new ImportException("CJ variant {$cjVariant->id} has no price.");
-        $this->writePrices($variant, $cost, $link);
+
+        if ($listed !== null) {
+            $currency = Currency::query()->where('code', (string) $link->currency_code)->first()
+                ?? throw new ImportException("Lunar has no {$link->currency_code} currency.");
+            $price = $listed->price ?? throw new ImportException("CJ variant {$cjVariant->id} has no confirmed price.");
+            $this->writeListedPrice($variant, $price, $currency);
+        } else {
+            $this->writePrices($variant, $cost, $link);
+        }
 
         return VariantLink::create([
             'cj_variant_id' => $cjVariant->id,
@@ -72,6 +83,8 @@ final class VariantWriter
             'lunar_variant_id' => $variant->id,
             'cj_sku' => $cjVariant->sku,
             'cost_usd' => $cost,
+            'shipping_cost_usd' => $listed?->shippingCostUsd,
+            'price' => $listed?->price,
             'stock' => $stock,
             'last_synced_at' => now(),
         ]);
@@ -90,6 +103,19 @@ final class VariantWriter
                 'min_quantity' => 1,
             ], ['price' => $amount]);
         }
+    }
+
+    public function writeListedPrice(ProductVariant $variant, string $price, Currency $currency): void
+    {
+        $minor = (int) bcadd(bcmul($price, bcpow('10', (string) (int) $currency->decimal_places), 12), '0.5', 0);
+
+        Price::query()->updateOrCreate([
+            'priceable_type' => $variant->getMorphClass(),
+            'priceable_id' => $variant->id,
+            'currency_id' => $currency->id,
+            'customer_group_id' => null,
+            'min_quantity' => 1,
+        ], ['price' => $minor]);
     }
 
     public function costFor(CjProduct $cjProduct, CjVariant $cjVariant): ?string
