@@ -27,6 +27,7 @@ final class LunarCjDropshippingServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadRoutesFrom(__DIR__.'/../routes/webhooks.php');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'lunar-cjdropshipping');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'lunar-cjdropshipping');
 
         if ($this->app->runningInConsole()) {
             $this->publishes([self::CONFIG_PATH => $this->app->configPath('lunar-cjdropshipping.php')], 'lunar-cjdropshipping-config');
