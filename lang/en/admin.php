@@ -142,6 +142,7 @@ return [
         'quote_failed' => 'Shipping quote failed, try again: :message',
         'quota' => 'The CJ daily quota is used up. Try again in about :minutes minutes.',
         'listed' => 'Sent for import.',
+        'prices_cleared' => 'Currency changed: prices were cleared. Recommend or enter them again.',
         'method_option' => ':name — US$ :price — :aging days',
         'accept_negative_margin' => 'I accept a negative margin',
         'fields' => [

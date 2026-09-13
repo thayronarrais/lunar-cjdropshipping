@@ -73,6 +73,8 @@ class ConfirmListing extends Page implements HasForms
 
     public function mount(int|string $record): void
     {
+        static::authorizeResourceAccess();
+
         $this->record = $this->resolveRecord($record);
         $candidate = $this->candidate();
 
@@ -173,7 +175,7 @@ class ConfirmListing extends Page implements HasForms
                     ->searchable()->required()->live()->afterStateUpdated(fn () => $this->clearQuote()),
                 Select::make('currency_code')->label($label('currency'))
                     ->options(fn (): array => Currency::query()->where('enabled', true)->orderBy('code')->pluck('name', 'code')->all())
-                    ->required()->live(),
+                    ->required()->live()->afterStateUpdated(fn () => $this->clearPrices()),
                 Select::make('shipping_method')->label($label('method'))
                     ->options(fn (): array => $this->methodOptions())
                     ->live(),
@@ -381,6 +383,15 @@ class ConfirmListing extends Page implements HasForms
         }
 
         $this->data['shipping_method'] = null;
+    }
+
+    private function clearPrices(): void
+    {
+        foreach (array_keys($this->variants) as $index) {
+            $this->variants[$index]['price'] = null;
+        }
+
+        Notification::make()->title(__('lunar-cjdropshipping::admin.listing.prices_cleared'))->warning()->send();
     }
 
     /**

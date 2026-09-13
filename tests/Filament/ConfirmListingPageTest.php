@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Tests\Filament;
 
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
+use Lunar\Admin\Models\Staff;
 use Lunar\Models\Country;
 use Thayron\LunarCjDropshipping\Enums\CandidateSource;
 use Thayron\LunarCjDropshipping\Enums\CandidateStatus;
@@ -82,6 +84,20 @@ final class ConfirmListingPageTest extends FilamentTestCase
         $this->assertSame(['vid' => 'v-1', 'selected' => true, 'cost_usd' => '10.00', 'shipping_cost_usd' => '5.43', 'price' => '24.99'], $candidate->listing['variants'][0]);
         $this->assertFalse($candidate->listing['variants'][1]['selected']);
         Queue::assertPushed(ImportProductJob::class);
+    }
+
+    public function test_changing_currency_clears_typed_prices(): void
+    {
+        $this->cj->fixture('product-detail')->fixture('stock-by-pid');
+
+        Livewire::test(ConfirmListing::class, ['record' => $this->candidate->getRouteKey()])
+            ->fillForm(['currency_code' => 'GBP'])
+            ->set('variants.0.price', '24.99')
+            ->set('variants.1.price', '16.99')
+            ->set('data.currency_code', 'EUR')
+            ->assertSet('variants.0.price', null)
+            ->assertSet('variants.1.price', null)
+            ->assertNotified(__('lunar-cjdropshipping::admin.listing.prices_cleared'));
     }
 
     public function test_bulk_adjusts_selected_prices(): void
@@ -176,5 +192,22 @@ final class ConfirmListingPageTest extends FilamentTestCase
 
         $this->assertSame([], $this->cj->requests());
         $this->assertSame(CandidateStatus::Approved, $this->candidate->fresh()->status);
+    }
+
+    public function test_forbids_a_staff_user_without_the_permission_before_any_cj_call(): void
+    {
+        // A CJ "not found" response would otherwise mark the candidate Unavailable as a
+        // mount() side effect before the 403 is thrown (see finding F2).
+        $this->cj->error(1602001, 'Product not found');
+
+        $staff = Staff::factory()->create(['admin' => false]);
+        $this->actingAs($staff, 'staff');
+        Filament::setCurrentPanel(Filament::getPanel('lunar'));
+
+        Livewire::test(ConfirmListing::class, ['record' => $this->candidate->getRouteKey()])
+            ->assertForbidden();
+
+        $this->assertCount(0, $this->cj->requests());
+        $this->assertSame(CandidateStatus::Pending, $this->candidate->fresh()->status);
     }
 }

@@ -142,6 +142,7 @@ return [
         'quote_failed' => 'A cotação de frete falhou, tente de novo: :message',
         'quota' => 'A cota diária da CJ acabou. Tente de novo em cerca de :minutes minutos.',
         'listed' => 'Enviado para importação.',
+        'prices_cleared' => 'Moeda alterada: os preços foram limpos. Recomende ou digite novamente.',
         'method_option' => ':name — US$ :price — :aging dias',
         'accept_negative_margin' => 'Aceito margem negativa',
         'fields' => [
