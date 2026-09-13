@@ -88,11 +88,18 @@ final class SyncProduct
     private function recordNotFound(ProductLink $link): void
     {
         $count = $link->not_found_count + 1;
-        $link->forceFill(['not_found_count' => $count])->save();
+        $threshold = (int) config('lunar-cjdropshipping.sync.not_found_threshold', 2);
 
-        if ($count < (int) config('lunar-cjdropshipping.sync.not_found_threshold', 2)) {
+        if ($count < $threshold) {
+            $link->forceFill([
+                'not_found_count' => $count,
+                'sync_error' => sprintf('CJ product not found (%d/%d).', $count, $threshold),
+            ])->save();
+
             return;
         }
+
+        $link->forceFill(['not_found_count' => $count])->save();
 
         DB::transaction(function () use ($link): void {
             foreach ($link->variantLinks()->with('variant')->get() as $variantLink) {

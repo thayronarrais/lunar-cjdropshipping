@@ -161,6 +161,18 @@ final class SyncProductTest extends TestCase
         $job->assertReleased();
     }
 
+    public function test_sub_threshold_not_found_replaces_a_stale_sync_error(): void
+    {
+        $this->link->forceFill(['sync_error' => 'System busy'])->save();
+        $this->cj->error(1602001, 'Product not found');
+
+        app(SyncProduct::class)->handle($this->link);
+
+        $link = $this->link->fresh();
+        $this->assertSame('CJ product not found (1/2).', $link->sync_error);
+        $this->assertSame(CjProductStatus::Active, $link->cj_status);
+    }
+
     private function variant(string $sku): ProductVariant
     {
         return ProductVariant::query()->where('sku', $sku)->sole();
