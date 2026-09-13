@@ -10,7 +10,8 @@
 Importar produtos da CJdropshipping para lojas Lunar e mantê-los sincronizados.
 
 - **Seleção:** a importação parte de regras (categorias CJ e/ou palavra-chave, com filtros). As regras geram **candidatos**, e a equipe **aprova** no admin do Lunar quais entram.
-- **Estado inicial:** o produto importado entra em **rascunho**, com conteúdo em inglês, para tradução e revisão no admin.
+- **Estado inicial:** o produto importado entra em **rascunho**, com conteúdo em inglês replicado em todas as línguas da loja, para tradução e revisão no admin.
+- **Moedas:** o package não assume moeda nenhuma; as lojas-alvo usam EUR e GBP.
 - **Sincronização:** estoque, custo/preço e indisponibilidade. Nome, descrição e imagens editados no admin nunca são sobrescritos.
 - **Reutilização:** o package deve servir a qualquer app Laravel + Lunar 1.x.
 
@@ -29,9 +30,9 @@ Importar produtos da CJdropshipping para lojas Lunar e mantê-los sincronizados.
 |---|---|
 | Entrada | Regras por categoria/busca geram candidatos; aprovação manual (individual ou em massa) |
 | Interface | Plugin do admin Lunar (Filament) + comandos artisan |
-| Preço | `custo_usd × (1 + markup%) × exchange_rate` de cada `Currency` habilitada do Lunar, com arredondamento configurável por regra |
+| Preço | Independente de moeda: custo USD × (1 + markup%), convertido para a moeda padrão da loja (via `Currency` USD do Lunar ou `usd_to_default_rate`) e para cada `Currency` habilitada pelo seu `exchange_rate`, com arredondamento configurável por regra. Lojas-alvo: EUR e GBP |
 | Sync | Estoque + custo/preço + indisponível; conteúdo editado nunca é sobrescrito |
-| Idioma | Importa em `en` e copia para `pt_BR` se o idioma existir; produto entra como `draft` |
+| Idioma | Importa o conteúdo inglês da CJ em todas as `Language` cadastradas (valor idêntico), para tradução manual; produto entra como `draft` |
 
 ## 3. Package
 
@@ -162,6 +163,7 @@ Os nomes das tabelas do Lunar vêm dos models (`(new Product)->getTable()`), res
 | `webhooks.path` | `cjdropshipping/webhook` | rota |
 | `webhooks.dedupe_ttl_hours` | `48` | |
 | `media.collection` | `images` | |
+| `pricing.usd_to_default_rate` | `null` | valor de 1 USD na moeda padrão, usado só se não houver `Currency` USD |
 | `log_channel` | `null` | canal padrão do app |
 
 **Operação recomendada:**
@@ -177,7 +179,7 @@ Os nomes das tabelas do Lunar vêm dos models (`(new Product)->getTable()`), res
 - `status = 'draft'`;
 - `product_type_id` e `brand_id` da regra;
 - `attribute_data`:
-  - `name` = `TranslatedText` com `en` = `productNameEn` e `pt_BR` = mesmo valor, se existir `Language` `pt_BR`;
+  - `name` = `TranslatedText` com o mesmo valor (`productNameEn`) para cada `Language` cadastrada;
   - `description` = HTML da CJ, nas mesmas línguas.
 
 Os atributos `name` e `description` do tipo de produto precisam existir (padrão do Lunar). Depois:
@@ -213,17 +215,18 @@ Entradas: `raw()['productKeyEn']` do produto (ex.: `"Color-Size"`) e `Variant::$
 
 Para cada `Currency` habilitada:
 
-1. `bruto = cost_usd × (1 + markup/100) × exchange_rate` (BCMath, a partir das strings decimais).
-2. Converte para unidades mínimas (`× 10^decimal_places`).
-3. Aplica o arredondamento, em unidades maiores:
+1. **Taxa USD → moeda padrão (`usdRate`):** se existir `Currency` com código `USD` e `exchange_rate > 0`, `usdRate = 1 / exchange_rate(USD)` (as taxas do Lunar são relativas à moeda padrão); senão `config('lunar-cjdropshipping.pricing.usd_to_default_rate')`. Sem nenhuma das duas, a importação falha com mensagem clara.
+2. `bruto = cost_usd × (1 + markup/100) × usdRate × exchange_rate(moeda)` (BCMath, a partir das strings decimais). Para a moeda padrão, `exchange_rate = 1`.
+3. Converte para unidades mínimas (`× 10^decimal_places`).
+4. Aplica o arredondamento, em unidades maiores:
    - `ends_90`: teto do inteiro menos 0,10 (se o resultado ficar abaixo do bruto, soma 1);
    - `ends_99`: análogo, com 0,01;
    - `whole`: teto;
    - `none`: arredonda meio para cima;
    - moedas com 0 casas decimais: `ends_*` vira `whole`.
-4. `Price` com `customer_group_id = null`, `min_quantity = 1`, `currency_id` e `priceable` = variante. Na sincronização é atualizado (`updateOrCreate` por variante + moeda + grupo nulo + min_quantity 1).
+5. `Price` com `customer_group_id = null`, `min_quantity = 1`, `currency_id` e `priceable` = variante. Na sincronização é atualizado (`updateOrCreate` por variante + moeda + grupo nulo + min_quantity 1).
 
-**Premissa:** a moeda padrão do Lunar deve ter `exchange_rate` relativo ao USD. No app alvo: USD = 1, BRL = 5. Se a moeda padrão não for USD, a importação falha com mensagem explicando a premissa.
+**Exemplo (loja EUR padrão, GBP 0,85, USD 1,08):** custo US$ 10,00, markup 100% → EUR `10 × 2 × (1/1,08)` = 18,52 → `ends_90` = 18,90; GBP `18,52 × 0,85` = 15,74 → `ends_90` = 15,90. Uma loja com USD padrão funciona com `usdRate = 1`.
 
 ### 6.6 Imagens (`ImportProductImages` + `ImageDownloader`)
 
@@ -367,18 +370,18 @@ Se `schedule.enabled`, o provider registra em `callAfterResolving(Schedule::clas
 
 ## 10. Testes
 
-Orchestra Testbench com os service providers do Lunar core/admin, SQLite em memória e `RefreshDatabase`. O baseline de teste cria `Language` en/pt_BR, `Currency` USD (padrão, rate 1) e BRL (rate 5, 2 casas), `Channel`, `CustomerGroup`, `TaxClass` e `ProductType` com atributos `name`/`description`.
+Orchestra Testbench com os service providers do Lunar core/admin, SQLite em memória e `RefreshDatabase`. O baseline de teste cria `Language` en (padrão) e fr, `Currency` EUR (padrão, rate 1, 2 casas), GBP (rate 0,85) e USD (rate 1,08), `Channel`, `CustomerGroup`, `TaxClass` e `ProductType` com atributos `name`/`description`.
 
 - **CJ fake:** `Psr\Http\Client\ClientInterface` com o `MockHandler` do Guzzle, registrado no container; o provider do SDK o usa. Fixtures JSON reais em `tests/Fixtures/` (listV2, product/query com `productKeyEn`, getInventoryByPid, token, webhook payloads).
 - **Imagens:** `Http::fake()` + `Storage::fake(media disk)`.
 - **Unit:**
-  - `PriceCalculator`: markup, câmbio, arredondamentos, 0 casas decimais, BCMath sem float;
+  - `PriceCalculator`: markup, conversão via `Currency` USD e via `usd_to_default_rate`, erro sem taxa, EUR/GBP, arredondamentos, 0 casas decimais, BCMath sem float;
   - `VariantOptionParser`: 1 variante, 2 opções, hífen no último valor, `productKeyEn` ausente/incompatível;
   - `MeasurementConverter`;
   - `StockResolver`: soma, filtro por país, variante ausente.
 - **Feature:**
   - `DiscoverCandidates`: filtros, upsert, ignorados, já importados, `max_pages`, quota adiada;
-  - `ImportProduct`: rascunho, atributos en/pt_BR, opções/variantes, preços USD/BRL, estoque, vínculos, coleção/canal, idempotência, rollback, pré-condições, NotFound;
+  - `ImportProduct`: rascunho, atributos em todas as línguas, opções/variantes, preços EUR/GBP/USD, estoque, vínculos, coleção/canal, idempotência, rollback, pré-condições, NotFound;
   - `ImportProductImages`: primary, sem duplicar, falha parcial;
   - `SyncProduct`: estoque, recálculo de preço com markup do vínculo, 2× NotFound → indisponível (+ draft opcional), variantes novas registradas;
   - `ImportNewVariants`;
@@ -392,7 +395,7 @@ Orchestra Testbench com os service providers do Lunar core/admin, SQLite em mem�
 
 1. `composer test` passa sem rede; Larastan nível 6 e Pint limpos.
 2. No app lunar, com o plugin registrado, `QUEUE_CONNECTION=database` e um worker na fila `cjdropshipping`:
-   1. criar uma regra para uma categoria CJ e buscar candidatos lista produtos com preço calculado em USD e BRL;
-   2. aprovar 3 candidatos cria 3 produtos `draft` com variantes/opções, preços USD/BRL, estoque e imagens;
+   1. criar uma regra para uma categoria CJ e buscar candidatos lista produtos com preço calculado em cada moeda habilitada (EUR e GBP);
+   2. aprovar 3 candidatos cria 3 produtos `draft` com variantes/opções, preços EUR/GBP, estoque e imagens;
    3. `php artisan cj:sync --product={pid}` atualiza estoque/preço de um produto importado;
    4. um webhook `STOCK` assinado para um pid vinculado despacha a sincronização.
