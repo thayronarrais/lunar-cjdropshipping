@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Jobs;
 
+use DateTimeInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -31,9 +32,11 @@ final class ImportProductJob implements ShouldBeUnique, ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    public int $tries = 3;
+    public int $maxExceptions = 3;
 
-    public int $uniqueFor = 3600;
+    public int $timeout = 600;
+
+    public int $uniqueFor = 90000;
 
     /** @var list<int> */
     public array $backoff = [60, 300];
@@ -46,6 +49,23 @@ final class ImportProductJob implements ShouldBeUnique, ShouldQueue
     public function uniqueId(): string
     {
         return 'cj-import-'.$this->candidate->cj_product_id;
+    }
+
+    /**
+     * Quota releases do not consume attempts; only real exceptions are capped by $maxExceptions.
+     */
+    public function retryUntil(): DateTimeInterface
+    {
+        return now()->addHours(48);
+    }
+
+    public function failed(Throwable $exception): void
+    {
+        $candidate = Candidate::query()->find($this->candidate->getKey());
+
+        if ($candidate !== null) {
+            $this->markFailed($candidate, $exception->getMessage());
+        }
     }
 
     public function handle(ImportProduct $import, CjClient $cj, Throttle $throttle): void

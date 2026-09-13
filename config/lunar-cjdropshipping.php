@@ -3,8 +3,11 @@
 return [
 
     /*
-    | Queue used by all importer jobs. Run a single worker on it:
-    | php artisan queue:work --queue=cjdropshipping
+    | Queue used by all importer jobs. The queue connection must not be "sync"
+    | (jobs wait for the CJ daily quota by releasing themselves). Run a single
+    | worker on it with a timeout that covers the longest job:
+    | php artisan queue:work --queue=cjdropshipping --timeout=3600
+    | and set the connection's "retry_after" (config/queue.php) above 3600.
     */
     'queue' => env('CJ_IMPORT_QUEUE', 'cjdropshipping'),
 

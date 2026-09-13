@@ -69,6 +69,23 @@ final class CandidateResourceTest extends FilamentTestCase
         $this->assertSame(CandidateStatus::Pending, $candidate->fresh()->status);
     }
 
+    public function test_bulk_reset_recovers_stuck_approved_and_importing_candidates(): void
+    {
+        $importing = $this->candidate('p-1', CandidateStatus::Importing);
+        $approved = $this->candidate('p-2', CandidateStatus::Approved);
+        $imported = $this->candidate('p-3', CandidateStatus::Imported);
+        $importing->forceFill(['error' => 'stale'])->save();
+
+        Livewire::test(ListCandidates::class)
+            ->filterTable('status', null)
+            ->callTableBulkAction('reset', [$importing, $approved, $imported]);
+
+        $this->assertSame(CandidateStatus::Pending, $importing->fresh()->status);
+        $this->assertNull($importing->fresh()->error);
+        $this->assertSame(CandidateStatus::Pending, $approved->fresh()->status);
+        $this->assertSame(CandidateStatus::Imported, $imported->fresh()->status);
+    }
+
     public function test_bulk_ignore_skips_imported_candidates(): void
     {
         $pending = $this->candidate('p-1', CandidateStatus::Pending);

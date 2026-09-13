@@ -161,7 +161,7 @@ class CandidateResource extends BaseResource
                     ->deselectRecordsAfterCompletion()
                     ->action(fn (EloquentCollection $records) => $records
                         ->filter(fn (Model $model): bool => $model instanceof Candidate)
-                        ->filter(fn (Candidate $candidate) => in_array($candidate->status, [CandidateStatus::Ignored, CandidateStatus::Failed], true))
+                        ->filter(fn (Candidate $candidate) => in_array($candidate->status, [CandidateStatus::Ignored, CandidateStatus::Failed, CandidateStatus::Approved, CandidateStatus::Importing], true))
                         ->each(fn (Candidate $candidate) => $candidate->forceFill(['status' => CandidateStatus::Pending, 'error' => null])->save())),
             ]);
     }

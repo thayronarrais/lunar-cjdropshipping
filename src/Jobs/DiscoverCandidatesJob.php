@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Jobs;
 
+use DateTimeInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -22,9 +23,11 @@ final class DiscoverCandidatesJob implements ShouldBeUnique, ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    public int $tries = 3;
+    public int $maxExceptions = 3;
 
-    public int $uniqueFor = 3600;
+    public int $timeout = 3600;
+
+    public int $uniqueFor = 90000;
 
     /** @var list<int> */
     public array $backoff = [60, 300, 900];
@@ -37,6 +40,14 @@ final class DiscoverCandidatesJob implements ShouldBeUnique, ShouldQueue
     public function uniqueId(): string
     {
         return 'cj-discover-'.$this->rule->id;
+    }
+
+    /**
+     * Quota releases do not consume attempts; only real exceptions are capped by $maxExceptions.
+     */
+    public function retryUntil(): DateTimeInterface
+    {
+        return now()->addHours(48);
     }
 
     public function handle(DiscoverCandidates $discover): void

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Thayron\LunarCjDropshipping\Tests\Feature\Import;
 
 use Illuminate\Support\Facades\Bus;
+use RuntimeException;
 use Thayron\CjDropshipping\CjClient;
 use Thayron\CjDropshipping\Exceptions\ServerException;
 use Thayron\LunarCjDropshipping\Actions\ImportProduct;
@@ -97,6 +98,17 @@ final class ImportProductJobTest extends TestCase
         $this->runJob();
 
         $this->assertSame(CandidateStatus::Imported, $this->candidate->fresh()->status);
+    }
+
+    public function test_failed_hook_marks_the_candidate_failed(): void
+    {
+        $this->candidate->forceFill(['status' => CandidateStatus::Importing])->save();
+
+        (new ImportProductJob($this->candidate))->failed(new RuntimeException('boom'));
+
+        $candidate = $this->candidate->fresh();
+        $this->assertSame(CandidateStatus::Failed, $candidate->status);
+        $this->assertSame('boom', $candidate->error);
     }
 
     private function runJob(): void
