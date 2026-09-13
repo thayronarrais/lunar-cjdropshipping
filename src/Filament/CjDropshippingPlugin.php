@@ -6,7 +6,9 @@ namespace Thayron\LunarCjDropshipping\Filament;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
+use Thayron\LunarCjDropshipping\Filament\Resources\CandidateResource;
 use Thayron\LunarCjDropshipping\Filament\Resources\ImportRuleResource;
+use Thayron\LunarCjDropshipping\Filament\Resources\ProductLinkResource;
 
 final class CjDropshippingPlugin implements Plugin
 {
@@ -19,6 +21,8 @@ final class CjDropshippingPlugin implements Plugin
     {
         $panel->resources([
             ImportRuleResource::class,
+            CandidateResource::class,
+            ProductLinkResource::class,
         ]);
     }
 
