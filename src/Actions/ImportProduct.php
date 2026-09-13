@@ -62,7 +62,8 @@ final class ImportProduct
         $this->throttle->wait();
         $inventory = $this->cj->products()->inventoryByProduct($cjProduct->id);
 
-        $link = DB::transaction(fn (): ProductLink => $this->createProduct($candidate->importRule, $cjProduct, $inventory));
+        $rule = $candidate->importRule ?? throw new ImportException("Candidate {$candidate->cj_product_id} has no import rule.");
+        $link = DB::transaction(fn (): ProductLink => $this->createProduct($rule, $cjProduct, $inventory));
 
         $candidate->forceFill(['status' => CandidateStatus::Imported, 'lunar_product_id' => $link->lunar_product_id, 'error' => null])->save();
 

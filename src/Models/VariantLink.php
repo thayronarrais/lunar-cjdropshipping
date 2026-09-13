@@ -16,6 +16,8 @@ use Lunar\Models\ProductVariant;
  * @property int $lunar_variant_id
  * @property string|null $cj_sku
  * @property string|null $cost_usd
+ * @property string|null $shipping_cost_usd
+ * @property string|null $price
  * @property int $stock
  * @property Carbon|null $last_synced_at
  * @property-read ProductLink $productLink
@@ -31,6 +33,8 @@ class VariantLink extends Model
     {
         return [
             'cost_usd' => 'decimal:2',
+            'shipping_cost_usd' => 'decimal:2',
+            'price' => 'decimal:2',
             'stock' => 'integer',
             'last_synced_at' => 'datetime',
         ];

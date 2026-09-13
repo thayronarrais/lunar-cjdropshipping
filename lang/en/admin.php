@@ -47,6 +47,10 @@ return [
     'candidates' => [
         'label' => 'Candidate',
         'plural_label' => 'Candidates',
+        'source' => [
+            'catalog' => 'Catalog',
+            'rule' => 'Rule',
+        ],
         'columns' => [
             'image' => 'Image',
             'name' => 'Name',
@@ -65,6 +69,7 @@ return [
             'importing' => 'Importing',
             'imported' => 'Imported',
             'failed' => 'Failed',
+            'unavailable' => 'Unavailable on CJ',
         ],
         'actions' => [
             'import' => 'Import',

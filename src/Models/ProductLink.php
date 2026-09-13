@@ -21,9 +21,16 @@ use Thayron\LunarCjDropshipping\Enums\PriceRounding;
  * @property string $markup_percent
  * @property PriceRounding $rounding
  * @property string|null $country_code
+ * @property string|null $ship_from_country
+ * @property string|null $ship_to_country
+ * @property string|null $shipping_method
+ * @property string|null $currency_code
+ * @property bool $price_locked
+ * @property bool $margin_at_risk
  * @property CjProductStatus $cj_status
  * @property int $not_found_count
  * @property list<string> $new_cj_variant_ids
+ * @property list<string> $skipped_cj_variant_ids
  * @property Carbon|null $last_synced_at
  * @property string|null $sync_error
  * @property-read Product|null $product
@@ -39,6 +46,9 @@ class ProductLink extends Model
         'not_found_count' => 0,
         'cj_status' => 'active',
         'new_cj_variant_ids' => '[]',
+        'price_locked' => false,
+        'margin_at_risk' => false,
+        'skipped_cj_variant_ids' => '[]',
     ];
 
     protected function casts(): array
@@ -49,6 +59,9 @@ class ProductLink extends Model
             'cj_status' => CjProductStatus::class,
             'not_found_count' => 'integer',
             'new_cj_variant_ids' => 'array',
+            'price_locked' => 'boolean',
+            'margin_at_risk' => 'boolean',
+            'skipped_cj_variant_ids' => 'array',
             'last_synced_at' => 'datetime',
         ];
     }

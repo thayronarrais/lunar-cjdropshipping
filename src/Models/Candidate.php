@@ -8,11 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 use Lunar\Models\Product;
+use Thayron\LunarCjDropshipping\Enums\CandidateSource;
 use Thayron\LunarCjDropshipping\Enums\CandidateStatus;
 
 /**
  * @property int $id
- * @property int $import_rule_id
+ * @property int|null $import_rule_id
+ * @property CandidateSource $source
  * @property string $cj_product_id
  * @property string|null $cj_sku
  * @property string $name
@@ -24,8 +26,10 @@ use Thayron\LunarCjDropshipping\Enums\CandidateStatus;
  * @property string|null $error
  * @property int|null $lunar_product_id
  * @property array<string, mixed> $payload
+ * @property array<string, mixed>|null $listing
+ * @property Carbon|null $listed_at
  * @property Carbon $discovered_at
- * @property-read ImportRule $importRule
+ * @property-read ImportRule|null $importRule
  */
 class Candidate extends Model
 {
@@ -33,13 +37,20 @@ class Candidate extends Model
 
     protected $guarded = [];
 
+    protected $attributes = [
+        'source' => 'rule',
+    ];
+
     protected function casts(): array
     {
         return [
+            'source' => CandidateSource::class,
             'status' => CandidateStatus::class,
             'cost_usd' => 'decimal:2',
             'warehouse_stock' => 'integer',
             'payload' => 'array',
+            'listing' => 'array',
+            'listed_at' => 'datetime',
             'discovered_at' => 'datetime',
         ];
     }

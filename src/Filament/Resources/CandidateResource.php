@@ -92,7 +92,7 @@ class CandidateResource extends BaseResource
                 Tables\Columns\TextColumn::make('cost_usd')->label($column('cost_usd'))->prefix('US$ ')->sortable(),
                 Tables\Columns\TextColumn::make('sale_price')
                     ->label($column('price'))
-                    ->state(fn (Candidate $record): ?string => $record->cost_usd === null
+                    ->state(fn (Candidate $record): ?string => $record->cost_usd === null || $record->importRule === null
                         ? null
                         : PricePreview::amounts((string) $record->cost_usd, (string) $record->importRule->markup_percent, $record->importRule->rounding))
                     ->wrap(),
@@ -107,7 +107,7 @@ class CandidateResource extends BaseResource
                         CandidateStatus::Approved, CandidateStatus::Importing => 'info',
                         CandidateStatus::Imported => 'success',
                         CandidateStatus::Ignored => 'warning',
-                        CandidateStatus::Failed => 'danger',
+                        CandidateStatus::Failed, CandidateStatus::Unavailable => 'danger',
                     })
                     ->tooltip(fn (Candidate $record): ?string => $record->error),
                 Tables\Columns\TextColumn::make('discovered_at')->label($column('discovered_at'))->since()->sortable(),

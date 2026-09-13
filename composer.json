@@ -8,7 +8,7 @@
         "php": "^8.2",
         "lunarphp/core": "^1.4",
         "lunarphp/lunar": "^1.4",
-        "thayron/cjdropshipping-php": "^0.1"
+        "thayron/cjdropshipping-php": "^0.2"
     },
     "require-dev": {
         "guzzlehttp/guzzle": "^7.8",
