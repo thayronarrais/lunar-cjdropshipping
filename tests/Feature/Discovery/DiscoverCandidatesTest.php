@@ -9,6 +9,7 @@ use Lunar\Models\Product;
 use Thayron\CjDropshipping\CjClient;
 use Thayron\CjDropshipping\Exceptions\ServerException;
 use Thayron\LunarCjDropshipping\Actions\DiscoverCandidates;
+use Thayron\LunarCjDropshipping\Enums\CandidateSource;
 use Thayron\LunarCjDropshipping\Enums\CandidateStatus;
 use Thayron\LunarCjDropshipping\Enums\PriceRounding;
 use Thayron\LunarCjDropshipping\Jobs\DiscoverCandidatesJob;
@@ -149,6 +150,27 @@ final class DiscoverCandidatesTest extends TestCase
         $candidate = Candidate::query()->where('cj_product_id', 'p-100')->sole();
         $this->assertSame('9.99', $candidate->cost_usd);
         $this->assertSame(42, $candidate->warehouse_stock);
+    }
+
+    public function test_keeps_catalog_items_and_never_duplicates_a_product(): void
+    {
+        $rule = $this->rule(['keyword' => 'x']);
+        Candidate::create([
+            'cj_product_id' => 'p-100', 'source' => CandidateSource::Catalog, 'name' => 'Old name',
+            'status' => CandidateStatus::Pending, 'payload' => [], 'discovered_at' => now()->subDay(),
+        ]);
+        $this->cj->fixture('list-v2-page');
+
+        app(DiscoverCandidates::class)->handle($rule);
+
+        $catalogItem = Candidate::query()->where('cj_product_id', 'p-100')->sole();
+        $this->assertNull($catalogItem->import_rule_id);
+        $this->assertSame(CandidateSource::Catalog, $catalogItem->source);
+        $this->assertSame('Magnetic Phone Case', $catalogItem->name);
+
+        $ruleItem = Candidate::query()->where('cj_product_id', 'p-200')->sole();
+        $this->assertSame($rule->id, $ruleItem->import_rule_id);
+        $this->assertSame(CandidateSource::Rule, $ruleItem->source);
     }
 
     public function test_respects_max_pages(): void

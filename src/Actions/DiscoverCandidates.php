@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Actions;
 
-use Illuminate\Support\Str;
 use Thayron\CjDropshipping\CjClient;
 use Thayron\CjDropshipping\Criteria\ProductSearch;
 use Thayron\CjDropshipping\Data\ProductSummary;
+use Thayron\LunarCjDropshipping\Enums\CandidateSource;
 use Thayron\LunarCjDropshipping\Enums\CandidateStatus;
 use Thayron\LunarCjDropshipping\Models\Candidate;
 use Thayron\LunarCjDropshipping\Models\ImportRule;
@@ -109,7 +109,7 @@ final class DiscoverCandidates
      */
     private function upsert(ImportRule $rule, ProductSummary $summary): string
     {
-        $candidate = Candidate::query()->firstOrNew(['import_rule_id' => $rule->id, 'cj_product_id' => $summary->id]);
+        $candidate = Candidate::query()->firstOrNew(['cj_product_id' => $summary->id]);
 
         if ($candidate->exists && $candidate->status === CandidateStatus::Ignored) {
             return 'skipped_ignored';
@@ -118,15 +118,7 @@ final class DiscoverCandidates
         $link = ProductLink::query()->whereHas('product')->where('cj_product_id', $summary->id)->first();
         $isNew = ! $candidate->exists;
 
-        $candidate->fill([
-            'cj_sku' => $summary->sku,
-            'name' => Str::limit($summary->name ?? $summary->sku ?? $summary->id, 255, ''),
-            'image_url' => $summary->image,
-            'cost_usd' => CostParser::lowest($summary->sellPrice),
-            'warehouse_stock' => $summary->warehouseInventory,
-            'cj_category_id' => $summary->categoryId,
-            'payload' => $summary->raw(),
-        ]);
+        $candidate->fillFromSummary($summary);
 
         if ($link !== null) {
             $candidate->status = CandidateStatus::Imported;
@@ -137,6 +129,8 @@ final class DiscoverCandidates
         }
 
         if ($isNew) {
+            $candidate->import_rule_id = $rule->id;
+            $candidate->source = CandidateSource::Rule;
             $candidate->discovered_at = now();
         }
 

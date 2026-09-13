@@ -6,10 +6,10 @@ namespace Thayron\LunarCjDropshipping\Tests\Filament;
 
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
+use Thayron\LunarCjDropshipping\Enums\CandidateSource;
 use Thayron\LunarCjDropshipping\Enums\CandidateStatus;
 use Thayron\LunarCjDropshipping\Enums\PriceRounding;
 use Thayron\LunarCjDropshipping\Filament\Resources\CandidateResource\Pages\ListCandidates;
-use Thayron\LunarCjDropshipping\Jobs\ImportProductJob;
 use Thayron\LunarCjDropshipping\Models\Candidate;
 use Thayron\LunarCjDropshipping\Models\ImportRule;
 use Thayron\LunarCjDropshipping\Tests\FilamentTestCase;
@@ -31,31 +31,30 @@ final class CandidateResourceTest extends FilamentTestCase
         $this->rule = ImportRule::create(['name' => 'Rule', 'keyword' => 'case', 'markup_percent' => '100', 'rounding' => PriceRounding::Ends90, 'product_type_id' => $this->productType->id]);
     }
 
-    public function test_shows_pending_candidates_by_default_with_calculated_prices(): void
+    public function test_lists_pending_items_from_rules_and_from_the_catalog(): void
     {
-        $pending = $this->candidate('p-1', CandidateStatus::Pending);
-        $ignored = $this->candidate('p-2', CandidateStatus::Ignored);
+        $fromRule = $this->candidate('p-1', CandidateStatus::Pending);
+        $fromCatalog = Candidate::create([
+            'cj_product_id' => 'p-2', 'source' => CandidateSource::Catalog, 'name' => 'Catalog product',
+            'status' => CandidateStatus::Pending, 'payload' => [], 'discovered_at' => now(),
+        ]);
+        $ignored = $this->candidate('p-3', CandidateStatus::Ignored);
 
         Livewire::test(ListCandidates::class)
-            ->assertCanSeeTableRecords([$pending])
+            ->assertCanSeeTableRecords([$fromRule, $fromCatalog])
             ->assertCanNotSeeTableRecords([$ignored])
-            ->assertSee('18.90 EUR');
+            ->assertSee(__('lunar-cjdropshipping::admin.candidates.source.catalog'))
+            ->filterTable('source', 'catalog')
+            ->assertCanSeeTableRecords([$fromCatalog])
+            ->assertCanNotSeeTableRecords([$fromRule]);
     }
 
-    public function test_bulk_import_approves_and_queues_candidates(): void
+    public function test_has_no_direct_import_actions(): void
     {
-        $pending = $this->candidate('p-1', CandidateStatus::Pending);
-        $failed = $this->candidate('p-2', CandidateStatus::Failed);
-        $imported = $this->candidate('p-3', CandidateStatus::Imported);
-
         Livewire::test(ListCandidates::class)
-            ->filterTable('status', null)
-            ->callTableBulkAction('import', [$pending, $failed, $imported]);
-
-        $this->assertSame(CandidateStatus::Approved, $pending->fresh()->status);
-        $this->assertSame(CandidateStatus::Approved, $failed->fresh()->status);
-        $this->assertSame(CandidateStatus::Imported, $imported->fresh()->status);
-        Queue::assertPushed(ImportProductJob::class, 2);
+            ->assertTableActionDoesNotExist('import')
+            ->assertTableActionDoesNotExist('retry')
+            ->assertTableBulkActionDoesNotExist('import');
     }
 
     public function test_bulk_ignore_and_reset(): void
@@ -97,17 +96,6 @@ final class CandidateResourceTest extends FilamentTestCase
 
         $this->assertSame(CandidateStatus::Ignored, $pending->fresh()->status);
         $this->assertSame(CandidateStatus::Imported, $imported->fresh()->status);
-    }
-
-    public function test_retry_action_queues_failed_candidates(): void
-    {
-        $candidate = $this->candidate('p-1', CandidateStatus::Failed);
-
-        Livewire::test(ListCandidates::class)
-            ->filterTable('status', 'failed')
-            ->callTableAction('retry', $candidate);
-
-        Queue::assertPushed(ImportProductJob::class, fn (ImportProductJob $job) => $job->candidate->is($candidate));
     }
 
     private function candidate(string $cjProductId, CandidateStatus $status): Candidate

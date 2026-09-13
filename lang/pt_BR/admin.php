@@ -45,8 +45,8 @@ return [
         ],
     ],
     'candidates' => [
-        'label' => 'Candidato',
-        'plural_label' => 'Candidatos',
+        'label' => 'Item da lista',
+        'plural_label' => 'Lista de importação',
         'source' => [
             'catalog' => 'Catálogo',
             'rule' => 'Regra',
@@ -56,7 +56,7 @@ return [
             'name' => 'Nome',
             'cj_sku' => 'SKU CJ',
             'cost_usd' => 'Custo CJ',
-            'price' => 'Preço de venda',
+            'source' => 'Origem',
             'warehouse_stock' => 'Estoque',
             'rule' => 'Regra',
             'status' => 'Status',
@@ -72,12 +72,9 @@ return [
             'unavailable' => 'Indisponível na CJ',
         ],
         'actions' => [
-            'import' => 'Importar',
             'ignore' => 'Ignorar',
             'reset' => 'Voltar para pendente',
-            'retry' => 'Tentar de novo',
             'open' => 'Abrir no Lunar',
-            'import_queued' => ':count produto(s) enviados para importação. Produtos já na fila são ignorados.',
         ],
     ],
     'links' => [

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Filament\Resources;
 
-use Filament\Notifications\Notification;
 use Filament\Resources\Pages\PageRegistration;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -13,10 +12,9 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Lunar\Admin\Filament\Resources\ProductResource;
 use Lunar\Admin\Support\Resources\BaseResource;
+use Thayron\LunarCjDropshipping\Enums\CandidateSource;
 use Thayron\LunarCjDropshipping\Enums\CandidateStatus;
 use Thayron\LunarCjDropshipping\Filament\Resources\CandidateResource\Pages;
-use Thayron\LunarCjDropshipping\Filament\Support\PricePreview;
-use Thayron\LunarCjDropshipping\Jobs\ImportProductJob;
 use Thayron\LunarCjDropshipping\Models\Candidate;
 
 class CandidateResource extends BaseResource
@@ -57,28 +55,6 @@ class CandidateResource extends BaseResource
         return parent::getEloquentQuery()->with('importRule');
     }
 
-    /**
-     * @param  iterable<Candidate>  $candidates
-     */
-    public static function approve(iterable $candidates): int
-    {
-        $count = 0;
-
-        foreach ($candidates as $candidate) {
-            if (! in_array($candidate->status, [CandidateStatus::Pending, CandidateStatus::Failed, CandidateStatus::Ignored], true)) {
-                continue;
-            }
-
-            $candidate->forceFill(['status' => CandidateStatus::Approved, 'error' => null])->save();
-            ImportProductJob::dispatch($candidate);
-            $count++;
-        }
-
-        Notification::make()->title(__('lunar-cjdropshipping::admin.candidates.actions.import_queued', ['count' => $count]))->success()->send();
-
-        return $count;
-    }
-
     protected static function getDefaultTable(Table $table): Table
     {
         $column = fn (string $key): string => __("lunar-cjdropshipping::admin.candidates.columns.{$key}");
@@ -89,15 +65,14 @@ class CandidateResource extends BaseResource
                 Tables\Columns\ImageColumn::make('image_url')->label($column('image'))->square()->size(56),
                 Tables\Columns\TextColumn::make('name')->label($column('name'))->searchable()->wrap()->limit(80),
                 Tables\Columns\TextColumn::make('cj_sku')->label($column('cj_sku'))->searchable()->toggleable(),
+                Tables\Columns\TextColumn::make('source')
+                    ->label($column('source'))
+                    ->badge()
+                    ->formatStateUsing(fn (CandidateSource $state): string => __('lunar-cjdropshipping::admin.candidates.source.'.$state->value))
+                    ->color(fn (CandidateSource $state): string => $state === CandidateSource::Catalog ? 'info' : 'gray'),
                 Tables\Columns\TextColumn::make('cost_usd')->label($column('cost_usd'))->prefix('US$ ')->sortable(),
-                Tables\Columns\TextColumn::make('sale_price')
-                    ->label($column('price'))
-                    ->state(fn (Candidate $record): ?string => $record->cost_usd === null || $record->importRule === null
-                        ? null
-                        : PricePreview::amounts((string) $record->cost_usd, (string) $record->importRule->markup_percent, $record->importRule->rounding))
-                    ->wrap(),
                 Tables\Columns\TextColumn::make('warehouse_stock')->label($column('warehouse_stock'))->numeric()->sortable(),
-                Tables\Columns\TextColumn::make('importRule.name')->label($column('rule'))->toggleable(),
+                Tables\Columns\TextColumn::make('importRule.name')->label($column('rule'))->placeholder('—')->toggleable(),
                 Tables\Columns\TextColumn::make('status')
                     ->label($column('status'))
                     ->badge()
@@ -117,18 +92,11 @@ class CandidateResource extends BaseResource
                     ->options(collect(CandidateStatus::cases())->mapWithKeys(fn (CandidateStatus $status) => [$status->value => __('lunar-cjdropshipping::admin.candidates.status.'.$status->value)])->all())
                     ->default(CandidateStatus::Pending->value),
                 Tables\Filters\SelectFilter::make('import_rule_id')->label($column('rule'))->relationship('importRule', 'name'),
+                Tables\Filters\SelectFilter::make('source')
+                    ->label($column('source'))
+                    ->options(collect(CandidateSource::cases())->mapWithKeys(fn (CandidateSource $source) => [$source->value => __('lunar-cjdropshipping::admin.candidates.source.'.$source->value)])->all()),
             ])
             ->actions([
-                Tables\Actions\Action::make('import')
-                    ->label(__('lunar-cjdropshipping::admin.candidates.actions.import'))
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->visible(fn (Candidate $record): bool => $record->status === CandidateStatus::Pending)
-                    ->action(fn (Candidate $record) => static::approve([$record])),
-                Tables\Actions\Action::make('retry')
-                    ->label(__('lunar-cjdropshipping::admin.candidates.actions.retry'))
-                    ->icon('heroicon-o-arrow-path')
-                    ->visible(fn (Candidate $record): bool => $record->status === CandidateStatus::Failed)
-                    ->action(fn (Candidate $record) => static::approve([$record])),
                 Tables\Actions\Action::make('ignore')
                     ->label(__('lunar-cjdropshipping::admin.candidates.actions.ignore'))
                     ->icon('heroicon-o-eye-slash')
@@ -142,11 +110,6 @@ class CandidateResource extends BaseResource
                     ->url(fn (Candidate $record): string => ProductResource::getUrl('edit', ['record' => $record->lunar_product_id])),
             ])
             ->bulkActions([
-                Tables\Actions\BulkAction::make('import')
-                    ->label(__('lunar-cjdropshipping::admin.candidates.actions.import'))
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->deselectRecordsAfterCompletion()
-                    ->action(fn (EloquentCollection $records) => static::approve($records->filter(fn (Model $model): bool => $model instanceof Candidate))),
                 Tables\Actions\BulkAction::make('ignore')
                     ->label(__('lunar-cjdropshipping::admin.candidates.actions.ignore'))
                     ->icon('heroicon-o-eye-slash')
