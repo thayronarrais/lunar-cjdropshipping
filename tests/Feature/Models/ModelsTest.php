@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Thayron\LunarCjDropshipping\Tests\Feature\Models;
 
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
 use Thayron\LunarCjDropshipping\Enums\CandidateStatus;
@@ -126,6 +127,21 @@ final class ModelsTest extends TestCase
         $this->expectException(QueryException::class);
 
         ProductLink::create($attributes);
+    }
+
+    /**
+     * RefreshDatabase wraps each test in a transaction, and SQLite refuses to toggle the
+     * `foreign_keys` pragma while a transaction is open, so FK actions cannot be exercised
+     * behaviourally here. Assert the schema instead: the migration must declare `SET NULL`
+     * (not the original `CASCADE`) so deleting a rule never removes list items.
+     */
+    public function test_import_rule_id_foreign_key_sets_null_on_delete_instead_of_cascading(): void
+    {
+        $action = collect(DB::select('PRAGMA foreign_key_list(cj_candidates)'))
+            ->firstWhere('table', 'cj_import_rules');
+
+        $this->assertNotNull($action);
+        $this->assertSame('SET NULL', $action->on_delete);
     }
 
     private function rule(): ImportRule

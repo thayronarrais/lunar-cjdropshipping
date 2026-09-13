@@ -14,13 +14,21 @@ return new class extends Migration
         $this->removeDuplicateCandidates();
 
         Schema::table('cj_candidates', function (Blueprint $table): void {
+            $table->dropForeign(['import_rule_id']);
+        });
+
+        Schema::table('cj_candidates', function (Blueprint $table): void {
+            // Drop the unique index sharing the column before the index() below, then
+            // re-add a plain index so MySQL always keeps one covering import_rule_id
+            // (dropping the FK above removes the index it implied).
+            $table->dropUnique(['import_rule_id', 'cj_product_id']);
+            $table->unique('cj_product_id');
             $table->index('import_rule_id');
         });
 
         Schema::table('cj_candidates', function (Blueprint $table): void {
-            $table->dropUnique(['import_rule_id', 'cj_product_id']);
-            $table->unique('cj_product_id');
             $table->foreignId('import_rule_id')->nullable()->change();
+            $table->foreign('import_rule_id')->references('id')->on('cj_import_rules')->nullOnDelete();
             $table->string('source')->default('rule')->after('import_rule_id');
             $table->json('listing')->nullable()->after('payload');
             $table->timestamp('listed_at')->nullable()->after('listing');
@@ -56,19 +64,26 @@ return new class extends Migration
         DB::table('cj_candidates')->whereNull('import_rule_id')->delete();
 
         Schema::table('cj_candidates', function (Blueprint $table): void {
-            $table->dropUnique(['cj_product_id']);
-            $table->dropColumn(['source', 'listing', 'listed_at']);
-            $table->foreignId('import_rule_id')->nullable(false)->change();
-            $table->unique(['import_rule_id', 'cj_product_id']);
+            $table->dropForeign(['import_rule_id']);
         });
 
         Schema::table('cj_candidates', function (Blueprint $table): void {
+            $table->dropUnique(['cj_product_id']);
             $table->dropIndex(['import_rule_id']);
+            $table->dropColumn(['source', 'listing', 'listed_at']);
+            $table->foreignId('import_rule_id')->nullable(false)->change();
+        });
+
+        Schema::table('cj_candidates', function (Blueprint $table): void {
+            $table->unique(['import_rule_id', 'cj_product_id']);
+            $table->foreign('import_rule_id')->references('id')->on('cj_import_rules')->cascadeOnDelete();
         });
     }
 
     /**
-     * The same CJ product found by several rules becomes one list item: keep the imported row, else the oldest.
+     * The same CJ product found by several rules becomes one list item: rank by how far
+     * along it is (imported first, then in-flight, then pending/failed, then anything
+     * else), oldest first within a rank, and keep only that one row.
      */
     private function removeDuplicateCandidates(): void
     {
@@ -81,7 +96,12 @@ return new class extends Migration
         foreach ($duplicates as $cjProductId) {
             $keep = DB::table('cj_candidates')
                 ->where('cj_product_id', $cjProductId)
-                ->orderByRaw("case when status = 'imported' then 0 else 1 end")
+                ->orderByRaw("case
+                    when status = 'imported' then 0
+                    when status in ('importing', 'approved') then 1
+                    when status in ('pending', 'failed') then 2
+                    else 3
+                end")
                 ->orderBy('id')
                 ->value('id');
 
