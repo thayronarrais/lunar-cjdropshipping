@@ -33,9 +33,7 @@ final class OptionResolver
     {
         $locale = Language::getDefault()?->code ?? 'en';
 
-        $existing = $option->values()->get()->first(
-            fn (ProductOptionValue $value): bool => ($value->name[$locale] ?? null) === $name,
-        );
+        $existing = $option->values()->where('name->'.$locale, $name)->first();
 
         return $existing ?? $option->values()->create([
             'name' => $this->translated($name),
