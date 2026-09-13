@@ -18,7 +18,7 @@ final class WebhooksSetupCommand extends Command
 
     public function handle(CjClient $cj): int
     {
-        $url = url((string) config('lunar-cjdropshipping.webhooks.path'), [], true);
+        $url = rtrim((string) config('app.url'), '/').'/'.ltrim((string) config('lunar-cjdropshipping.webhooks.path'), '/');
 
         try {
             $settings = WebhookSettings::make()->product($url)->stock($url);

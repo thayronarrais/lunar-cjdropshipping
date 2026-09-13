@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Tests\Feature\Webhooks;
 
-use Illuminate\Support\Facades\URL;
 use Lunar\Models\Product;
 use Thayron\LunarCjDropshipping\Enums\PriceRounding;
 use Thayron\LunarCjDropshipping\Models\ProductLink;
@@ -28,7 +27,7 @@ final class WebhooksSetupCommandTest extends TestCase
 
     public function test_configures_topics_and_subscribes_linked_products(): void
     {
-        URL::forceRootUrl('https://shop.example.com');
+        config(['app.url' => 'https://shop.example.com']);
         ProductLink::create(['cj_product_id' => 'p-100', 'lunar_product_id' => Product::factory()->create(['product_type_id' => $this->productType->id])->id, 'markup_percent' => '0', 'rounding' => PriceRounding::None, 'new_cj_variant_ids' => []]);
         $this->cj->success(true)->success(['successProductIds' => ['p-100'], 'failProductIds' => [], 'subscribeAll' => false]);
 
@@ -45,9 +44,18 @@ final class WebhooksSetupCommandTest extends TestCase
         $this->assertSame(['productIds' => ['p-100']], $this->cj->jsonAt(1));
     }
 
-    public function test_fails_without_a_public_https_url(): void
+    public function test_fails_when_the_app_url_is_not_https(): void
     {
-        URL::forceRootUrl('http://localhost');
+        config(['app.url' => 'http://shop.example.com']);
+
+        $this->artisan('cj:webhooks:setup')->assertFailed();
+
+        $this->assertSame([], $this->cj->requests());
+    }
+
+    public function test_fails_for_a_local_https_url(): void
+    {
+        config(['app.url' => 'https://localhost']);
 
         $this->artisan('cj:webhooks:setup')->assertFailed();
 
