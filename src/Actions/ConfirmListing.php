@@ -58,10 +58,15 @@ final class ConfirmListing
         }
 
         $negative = false;
+        $decimals = (int) $currency->decimal_places;
 
         foreach ($selected as $variant) {
             if ($variant->price === null || ! is_numeric($variant->price) || bccomp($variant->price, '0', 2) <= 0) {
                 throw ListingException::because('price_required');
+            }
+
+            if ($this->exceedsDecimalPlaces($variant->price, $decimals)) {
+                throw ListingException::because('price_precision', ['decimals' => (string) $decimals]);
             }
 
             if ($variant->shippingCostUsd === null) {
@@ -89,5 +94,12 @@ final class ConfirmListing
         ])->save();
 
         ImportProductJob::dispatch($candidate);
+    }
+
+    private function exceedsDecimalPlaces(string $price, int $decimals): bool
+    {
+        $fraction = str_contains($price, '.') ? substr(strrchr($price, '.') ?: '.', 1) : '';
+
+        return mb_strlen($fraction) > $decimals;
     }
 }

@@ -190,6 +190,7 @@ return [
             'product_type_required' => 'Escolha um tipo de produto.',
             'no_variants' => 'Selecione pelo menos uma variação.',
             'price_required' => 'Toda variação selecionada precisa de um preço acima de zero.',
+            'price_precision' => 'Os preços podem ter no máximo :decimals casas decimais.',
             'shipping_missing' => 'O método escolhido não envia a variação :sku.',
             'cost_missing' => 'A CJ não tem custo para a variação :sku.',
             'negative_margin' => 'Há preços abaixo do custo. Marque "Aceito margem negativa" para continuar.',

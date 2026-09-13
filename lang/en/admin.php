@@ -190,6 +190,7 @@ return [
             'product_type_required' => 'Choose a product type.',
             'no_variants' => 'Select at least one variant.',
             'price_required' => 'Every selected variant needs a price above zero.',
+            'price_precision' => 'Prices can have at most :decimals decimal places.',
             'shipping_missing' => 'The chosen method cannot ship variant :sku.',
             'cost_missing' => 'CJ has no cost for variant :sku.',
             'negative_margin' => 'Some prices are below cost. Tick "I accept a negative margin" to continue.',

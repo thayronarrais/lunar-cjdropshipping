@@ -102,6 +102,23 @@ final class ConfirmListingTest extends TestCase
         Queue::assertNothingPushed();
     }
 
+    public function test_rejects_prices_with_more_decimals_than_the_currency_allows(): void
+    {
+        $listing = Listing::fromArray([...$this->listing()->toArray(), 'variants' => [
+            ['vid' => 'v-1', 'selected' => true, 'cost_usd' => '3.47', 'shipping_cost_usd' => '5.43', 'price' => '24.999'],
+        ]]);
+
+        try {
+            app(ConfirmListing::class)->handle($this->candidate, $listing, false);
+            $this->fail('Expected ListingException.');
+        } catch (ListingException $exception) {
+            $this->assertSame(__('lunar-cjdropshipping::admin.listing.errors.price_precision', ['decimals' => 2]), $exception->getMessage());
+        }
+
+        $this->assertSame(CandidateStatus::Pending, $this->candidate->fresh()->status);
+        Queue::assertNothingPushed();
+    }
+
     public function test_accepts_a_negative_margin_when_confirmed(): void
     {
         $listing = Listing::fromArray([...$this->listing()->toArray(), 'variants' => [
