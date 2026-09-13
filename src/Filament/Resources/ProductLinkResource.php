@@ -55,7 +55,7 @@ class ProductLinkResource extends BaseResource
      */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with('product')->withCount('variantLinks');
+        return parent::getEloquentQuery()->whereHas('product')->with('product')->withCount('variantLinks');
     }
 
     /**

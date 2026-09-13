@@ -52,7 +52,7 @@ final class WebhookController
     {
         foreach (['pid', 'productId'] as $key) {
             if (is_scalar($params[$key] ?? null)) {
-                $link = ProductLink::query()->where('cj_product_id', (string) $params[$key])->first();
+                $link = ProductLink::query()->whereHas('product')->where('cj_product_id', (string) $params[$key])->first();
 
                 if ($link !== null) {
                     return $link;
@@ -62,7 +62,7 @@ final class WebhookController
 
         foreach (['vid', 'variantId'] as $key) {
             if (is_scalar($params[$key] ?? null)) {
-                $variantLink = VariantLink::query()->where('cj_variant_id', (string) $params[$key])->first();
+                $variantLink = VariantLink::query()->whereHas('productLink.product')->where('cj_variant_id', (string) $params[$key])->first();
 
                 if ($variantLink !== null) {
                     return $variantLink->productLink;

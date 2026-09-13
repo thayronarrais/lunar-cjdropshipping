@@ -40,6 +40,14 @@ final class ImportProduct
     {
         $existing = ProductLink::query()->where('cj_product_id', $candidate->cj_product_id)->first();
 
+        if ($existing !== null && ! $existing->product()->exists()) {
+            DB::transaction(function () use ($existing): void {
+                $existing->variantLinks()->delete();
+                $existing->delete();
+            });
+            $existing = null;
+        }
+
         if ($existing !== null) {
             $candidate->forceFill(['status' => CandidateStatus::Imported, 'lunar_product_id' => $existing->lunar_product_id, 'error' => null])->save();
 

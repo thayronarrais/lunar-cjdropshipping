@@ -101,6 +101,28 @@ final class DiscoverCandidatesTest extends TestCase
         $this->assertSame($product->id, $imported->lunar_product_id);
     }
 
+    public function test_links_to_soft_deleted_products_do_not_count_as_imported(): void
+    {
+        $rule = $this->rule(['keyword' => 'x']);
+        $product = Product::factory()->create(['product_type_id' => $this->productType->id]);
+        ProductLink::create(['cj_product_id' => 'p-100', 'lunar_product_id' => $product->id, 'markup_percent' => '0', 'rounding' => PriceRounding::None, 'new_cj_variant_ids' => []]);
+        ProductLink::create(['cj_product_id' => 'p-200', 'lunar_product_id' => $product->id, 'markup_percent' => '0', 'rounding' => PriceRounding::None, 'new_cj_variant_ids' => []]);
+        Candidate::create([
+            'import_rule_id' => $rule->id, 'cj_product_id' => 'p-200', 'name' => 'Cable Organizer', 'lunar_product_id' => $product->id,
+            'status' => CandidateStatus::Imported, 'payload' => [], 'discovered_at' => now()->subDay(),
+        ]);
+        $product->delete();
+        $this->cj->fixture('list-v2-page');
+
+        $stats = app(DiscoverCandidates::class)->handle($rule);
+
+        $this->assertSame(['found' => 2, 'created' => 1, 'updated' => 1, 'skipped_ignored' => 0, 'already_imported' => 0], $stats);
+        $this->assertSame(CandidateStatus::Pending, Candidate::query()->where('cj_product_id', 'p-100')->sole()->status);
+        $existing = Candidate::query()->where('cj_product_id', 'p-200')->sole();
+        $this->assertSame(CandidateStatus::Pending, $existing->status);
+        $this->assertNull($existing->lunar_product_id);
+    }
+
     public function test_updates_pending_candidates_on_rerun(): void
     {
         $rule = $this->rule(['keyword' => 'x']);

@@ -55,6 +55,18 @@ final class SyncCommandTest extends TestCase
         Queue::assertPushed(SyncProductJob::class, fn (SyncProductJob $job) => $job->link->is($target));
     }
 
+    public function test_skips_links_whose_lunar_product_is_soft_deleted(): void
+    {
+        $kept = $this->link('p-1', null);
+        $trashed = $this->link('p-2', null);
+        $trashed->product->delete();
+
+        $this->artisan('cj:sync --all')->expectsOutput('Dispatched 1 sync job(s).')->assertSuccessful();
+
+        Queue::assertPushed(SyncProductJob::class, fn (SyncProductJob $job) => $job->link->is($kept));
+        Queue::assertNotPushed(SyncProductJob::class, fn (SyncProductJob $job) => $job->link->is($trashed));
+    }
+
     private function link(string $cjProductId, ?\DateTimeInterface $lastSyncedAt): ProductLink
     {
         return ProductLink::create([

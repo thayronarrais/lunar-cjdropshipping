@@ -53,6 +53,13 @@ final class ProductLinkResourceTest extends FilamentTestCase
             ->assertCanSeeTableRecords([$this->link]);
     }
 
+    public function test_hides_links_whose_lunar_product_is_soft_deleted(): void
+    {
+        $this->link->product->delete();
+
+        Livewire::test(ListProductLinks::class)->assertCanNotSeeTableRecords([$this->link]);
+    }
+
     public function test_sync_actions_queue_jobs(): void
     {
         Queue::fake();

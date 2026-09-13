@@ -76,6 +76,18 @@ final class WebhookControllerTest extends TestCase
         Queue::assertNothingPushed();
     }
 
+    public function test_ignores_links_whose_lunar_product_is_soft_deleted(): void
+    {
+        $this->link->product->delete();
+
+        $this->postWebhook(['messageId' => 'm-8', 'type' => 'PRODUCT', 'messageType' => 'UPDATE', 'params' => ['pid' => 'p-100']])
+            ->assertExactJson(['status' => 'ignored']);
+        $this->postWebhook(['messageId' => 'm-9', 'type' => 'STOCK', 'messageType' => 'UPDATE', 'params' => ['vid' => 'v-1']])
+            ->assertExactJson(['status' => 'ignored']);
+
+        Queue::assertNothingPushed();
+    }
+
     public function test_rejects_invalid_signatures(): void
     {
         $body = (string) json_encode(['messageId' => 'm-7', 'type' => 'PRODUCT', 'messageType' => 'UPDATE', 'params' => ['pid' => 'p-100']]);

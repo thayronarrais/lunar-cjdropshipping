@@ -19,7 +19,7 @@ final class SyncCommand extends Command
 
     public function handle(): int
     {
-        $query = ProductLink::query();
+        $query = ProductLink::query()->whereHas('product');
         $productId = $this->option('product');
 
         if (is_string($productId) && $productId !== '') {

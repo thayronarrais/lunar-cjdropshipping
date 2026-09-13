@@ -149,6 +149,27 @@ final class ImportProductTest extends TestCase
         $this->assertCount(2, $this->cj->requests());
     }
 
+    public function test_reimports_when_the_linked_product_was_soft_deleted(): void
+    {
+        $this->createLunarBaseline();
+        $this->cj->fixture('product-detail')->fixture('stock-by-pid');
+        $first = app(ImportProduct::class)->handle($this->candidate());
+        $first->link->product->delete();
+        $this->cj->fixture('product-detail')->fixture('stock-by-pid');
+
+        $again = app(ImportProduct::class)->handle($this->candidate());
+
+        $this->assertFalse($again->link->is($first->link));
+        $this->assertNull(ProductLink::query()->find($first->link->id));
+        $this->assertSame(0, VariantLink::query()->where('cj_product_link_id', $first->link->id)->count());
+        $this->assertSame(1, Product::query()->count());
+        $this->assertNotSame($first->link->lunar_product_id, $again->link->lunar_product_id);
+        $this->assertSame($again->link->lunar_product_id, Product::query()->sole()->id);
+        $this->assertSame(2, $again->link->variantLinks()->count());
+        $this->assertNotSame([], $again->imageUrls);
+        $this->assertSame($again->link->lunar_product_id, $this->candidate()->fresh()->lunar_product_id);
+    }
+
     public function test_rolls_back_everything_when_pricing_fails(): void
     {
         $this->createLunarBaseline(withUsd: false);

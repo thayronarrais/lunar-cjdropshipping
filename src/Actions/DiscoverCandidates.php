@@ -114,7 +114,7 @@ final class DiscoverCandidates
             return 'skipped_ignored';
         }
 
-        $link = ProductLink::query()->where('cj_product_id', $summary->id)->first();
+        $link = ProductLink::query()->whereHas('product')->where('cj_product_id', $summary->id)->first();
         $isNew = ! $candidate->exists;
 
         $candidate->fill([
@@ -130,8 +130,9 @@ final class DiscoverCandidates
         if ($link !== null) {
             $candidate->status = CandidateStatus::Imported;
             $candidate->lunar_product_id = $link->lunar_product_id;
-        } elseif ($isNew) {
+        } elseif ($isNew || $candidate->status === CandidateStatus::Imported) {
             $candidate->status = CandidateStatus::Pending;
+            $candidate->lunar_product_id = null;
         }
 
         if ($isNew) {
