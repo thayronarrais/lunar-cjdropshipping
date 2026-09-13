@@ -131,4 +131,50 @@ final class ConfirmListingPageTest extends FilamentTestCase
 
         $this->assertSame(CandidateStatus::Unavailable, $this->candidate->fresh()->status);
     }
+
+    public function test_shipping_method_options_are_limited_to_methods_common_to_selected_variants(): void
+    {
+        $this->cj->fixture('product-detail')->fixture('stock-by-pid');
+
+        $page = Livewire::test(ConfirmListing::class, ['record' => $this->candidate->getRouteKey()])
+            ->fillForm(['ship_from_country' => 'CN', 'ship_to_country' => 'GB', 'currency_code' => 'GBP']);
+
+        $this->cj
+            ->success([
+                ['logisticName' => 'CJPacket Ordinary', 'logisticPrice' => '5.43', 'logisticAging' => '7-12'],
+                ['logisticName' => 'USPS+', 'logisticPrice' => '6.00', 'logisticAging' => '5-9'],
+            ])
+            ->success([['logisticName' => 'CJPacket Ordinary', 'logisticPrice' => '2.10', 'logisticAging' => '7-12']]);
+
+        $page->call('quoteShipping');
+
+        $options = $page->instance()->methodOptions();
+        $this->assertSame(['CJPacket Ordinary'], array_keys($options));
+        $this->assertStringContainsString('2.10–5.43', $options['CJPacket Ordinary']);
+        $page->assertFormSet(['shipping_method' => 'CJPacket Ordinary']);
+
+        $page->set('variants.1.selected', false);
+
+        $optionsAfterDeselecting = $page->instance()->methodOptions();
+        $this->assertContains('USPS+', array_keys($optionsAfterDeselecting));
+
+        $page
+            ->set('variants.0.price', '20.00')
+            ->set('data.shipping_method', 'USPS+')
+            ->call('listNow')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame(CandidateStatus::Approved, $this->candidate->fresh()->status);
+    }
+
+    public function test_blocks_opening_the_page_for_a_candidate_that_is_not_pending_or_failed(): void
+    {
+        $this->candidate->forceFill(['status' => CandidateStatus::Approved])->save();
+
+        Livewire::test(ConfirmListing::class, ['record' => $this->candidate->getRouteKey()])
+            ->assertSee(__('lunar-cjdropshipping::admin.listing.errors.not_confirmable'));
+
+        $this->assertSame([], $this->cj->requests());
+        $this->assertSame(CandidateStatus::Approved, $this->candidate->fresh()->status);
+    }
 }

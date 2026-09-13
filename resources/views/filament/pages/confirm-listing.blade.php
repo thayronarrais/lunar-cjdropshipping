@@ -71,7 +71,7 @@
                                         <x-filament::input type="number" step="0.01" min="0" wire:model.live.debounce.500ms="variants.{{ $index }}.price" />
                                     </x-filament::input.wrapper>
                                 </td>
-                                <td class="px-3 py-2 font-medium {{ $belowMinimum ? 'text-danger-600 dark:text-danger-400' : 'text-success-600 dark:text-success-400' }}">
+                                <td class="px-3 py-2 font-medium" style="color:rgb(var(--{{ $belowMinimum ? 'danger' : 'success' }}-600))">
                                     {{ $margin !== null ? $margin.'%' : '—' }}
                                 </td>
                             </tr>

@@ -75,6 +75,14 @@ class ConfirmListing extends Page implements HasForms
     {
         $this->record = $this->resolveRecord($record);
         $candidate = $this->candidate();
+
+        if (! in_array($candidate->status, [CandidateStatus::Pending, CandidateStatus::Failed], true)) {
+            $this->loadError = __('lunar-cjdropshipping::admin.listing.errors.not_confirmable');
+            $this->getForm('form')?->fill();
+
+            return;
+        }
+
         $listing = is_array($candidate->listing) ? Listing::fromArray($candidate->listing) : null;
 
         try {
@@ -376,23 +384,77 @@ class ConfirmListing extends Page implements HasForms
     }
 
     /**
+     * Methods common to every selected variant's quote, so choosing one never leaves a
+     * selected variant unshippable. Labelled with the lowest–highest price among them.
+     *
      * @return array<string, string> method name => "name — US$ price — aging days"
      */
-    private function methodOptions(): array
+    public function methodOptions(): array
     {
+        $selected = array_values(array_filter($this->variants, fn (array $row): bool => $row['selected']));
+
+        if ($selected === []) {
+            return [];
+        }
+
+        /** @var array<string, array<string, array{price_usd: string|null, aging: string|null}>> $quote */
+        $quote = [];
+        $vids = [];
+
+        foreach ($selected as $row) {
+            $quote[$row['vid']] = $row['methods'];
+            $vids[] = $row['vid'];
+        }
+
         $options = [];
 
-        foreach ($this->variants as $row) {
-            foreach ($row['methods'] as $name => $method) {
-                $options[(string) $name] ??= __('lunar-cjdropshipping::admin.listing.method_option', [
-                    'name' => $name,
-                    'price' => $method['price_usd'] ?? '—',
-                    'aging' => $method['aging'] ?? '—',
-                ]);
+        foreach (FreightQuoter::commonMethods($quote, $vids) as $name) {
+            $prices = [];
+            $aging = null;
+
+            foreach ($selected as $row) {
+                $price = $row['methods'][$name]['price_usd'] ?? null;
+
+                if ($price !== null) {
+                    $prices[] = $price;
+                }
+
+                $aging ??= $row['methods'][$name]['aging'] ?? null;
             }
+
+            $options[$name] = __('lunar-cjdropshipping::admin.listing.method_option', [
+                'name' => $name,
+                'price' => $this->priceRangeLabel($prices),
+                'aging' => $aging ?? '—',
+            ]);
         }
 
         return $options;
+    }
+
+    /**
+     * @param  list<string>  $prices
+     */
+    private function priceRangeLabel(array $prices): string
+    {
+        if ($prices === []) {
+            return '—';
+        }
+
+        $min = $prices[0];
+        $max = $prices[0];
+
+        foreach ($prices as $price) {
+            if (bccomp($price, $min, 2) < 0) {
+                $min = $price;
+            }
+
+            if (bccomp($price, $max, 2) > 0) {
+                $max = $price;
+            }
+        }
+
+        return bccomp($min, $max, 2) === 0 ? $min : "{$min}–{$max}";
     }
 
     /**
