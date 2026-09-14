@@ -81,7 +81,7 @@ class CandidateResource extends BaseResource
                         CandidateStatus::Pending => 'gray',
                         CandidateStatus::Approved, CandidateStatus::Importing => 'info',
                         CandidateStatus::Imported => 'success',
-                        CandidateStatus::Ignored => 'warning',
+                        CandidateStatus::Ignored, CandidateStatus::ShippingTooHigh => 'warning',
                         CandidateStatus::Failed, CandidateStatus::Unavailable => 'danger',
                     })
                     ->tooltip(fn (Candidate $record): ?string => $record->error),
@@ -129,7 +129,7 @@ class CandidateResource extends BaseResource
                     ->deselectRecordsAfterCompletion()
                     ->action(fn (EloquentCollection $records) => $records
                         ->filter(fn (Model $model): bool => $model instanceof Candidate)
-                        ->filter(fn (Candidate $candidate) => in_array($candidate->status, [CandidateStatus::Ignored, CandidateStatus::Failed, CandidateStatus::Approved, CandidateStatus::Importing, CandidateStatus::Unavailable], true))
+                        ->filter(fn (Candidate $candidate) => in_array($candidate->status, [CandidateStatus::Ignored, CandidateStatus::Failed, CandidateStatus::Approved, CandidateStatus::Importing, CandidateStatus::Unavailable, CandidateStatus::ShippingTooHigh], true))
                         ->each(fn (Candidate $candidate) => $candidate->forceFill(['status' => CandidateStatus::Pending, 'error' => null])->save())),
             ]);
     }

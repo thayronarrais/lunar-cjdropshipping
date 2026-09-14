@@ -7,6 +7,7 @@ namespace Thayron\LunarCjDropshipping\Tests\Filament;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
+use Lunar\Models\Country;
 use Thayron\LunarCjDropshipping\Enums\PriceRounding;
 use Thayron\LunarCjDropshipping\Filament\Resources\ImportRuleResource\Pages\CreateImportRule;
 use Thayron\LunarCjDropshipping\Filament\Resources\ImportRuleResource\Pages\ListImportRules;
@@ -78,6 +79,31 @@ final class ImportRuleResourceTest extends FilamentTestCase
             ->assertHasFormErrors(['keyword', 'max_cost', 'max_pages']);
 
         $this->assertSame(0, ImportRule::query()->count());
+    }
+
+    public function test_saves_the_freight_filter(): void
+    {
+        Country::factory()->create(['iso2' => 'GB', 'iso3' => 'GBR', 'name' => 'United Kingdom']);
+
+        Livewire::test(CreateImportRule::class)
+            ->fillForm([
+                'name' => 'Pets UK',
+                'keyword' => 'dog',
+                'markup_percent' => 100,
+                'rounding' => 'none',
+                'product_type_id' => $this->productType->id,
+                'ship_to_country' => 'GB',
+                'max_shipping_percent' => 100,
+                'max_quotes_per_run' => 25,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $rule = ImportRule::query()->where('name', 'Pets UK')->sole();
+        $this->assertSame('GB', $rule->ship_to_country);
+        $this->assertSame('100.00', $rule->max_shipping_percent);
+        $this->assertSame(25, $rule->max_quotes_per_run);
+        $this->assertTrue($rule->hasFreightFilter());
     }
 
     public function test_discover_action_queues_the_job(): void

@@ -15,6 +15,7 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\Validation\ImplicitRule;
 use Lunar\Admin\Support\Resources\BaseResource;
 use Lunar\Models\Collection;
+use Lunar\Models\Country;
 use Thayron\LunarCjDropshipping\Enums\PriceRounding;
 use Thayron\LunarCjDropshipping\Filament\Resources\ImportRuleResource\Pages;
 use Thayron\LunarCjDropshipping\Filament\Support\CjCatalogOptions;
@@ -117,6 +118,25 @@ class ImportRuleResource extends BaseResource
                             }
                         },
                     ]),
+                Forms\Components\Select::make('ship_to_country')
+                    ->label($field('ship_to_country'))
+                    ->helperText($field('ship_to_country_help'))
+                    ->searchable()
+                    ->options(fn (): array => Country::query()->orderBy('name')->pluck('name', 'iso2')->all()),
+                Forms\Components\TextInput::make('max_shipping_percent')
+                    ->label($field('max_shipping_percent'))
+                    ->helperText($field('max_shipping_percent_help'))
+                    ->numeric()
+                    ->minValue(0)
+                    ->suffix('%'),
+                Forms\Components\TextInput::make('max_quotes_per_run')
+                    ->label($field('max_quotes_per_run'))
+                    ->helperText($field('max_quotes_per_run_help'))
+                    ->numeric()
+                    ->minValue(1)
+                    ->maxValue(1000)
+                    ->default(50)
+                    ->required(),
                 Forms\Components\TextInput::make('markup_percent')->label($field('markup_percent'))->numeric()->minValue(0)->suffix('%')->default(100)->required()->live(debounce: 500),
                 Forms\Components\Select::make('rounding')->label($field('rounding'))->options(static::roundingOptions())->default(PriceRounding::None->value)->required()->live(),
                 Forms\Components\Placeholder::make('price_preview')

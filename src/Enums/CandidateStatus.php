@@ -13,4 +13,5 @@ enum CandidateStatus: string
     case Imported = 'imported';
     case Failed = 'failed';
     case Unavailable = 'unavailable';
+    case ShippingTooHigh = 'shipping_too_high';
 }

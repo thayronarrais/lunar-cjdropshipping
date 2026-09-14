@@ -23,6 +23,8 @@ use Thayron\LunarCjDropshipping\Pricing\CostParser;
  * @property string $name
  * @property string|null $image_url
  * @property string|null $cost_usd
+ * @property string|null $shipping_usd
+ * @property Carbon|null $shipping_checked_at
  * @property int|null $warehouse_stock
  * @property string|null $cj_category_id
  * @property CandidateStatus $status
@@ -50,6 +52,8 @@ class Candidate extends Model
             'source' => CandidateSource::class,
             'status' => CandidateStatus::class,
             'cost_usd' => 'decimal:2',
+            'shipping_usd' => 'decimal:2',
+            'shipping_checked_at' => 'datetime',
             'warehouse_stock' => 'integer',
             'payload' => 'array',
             'listing' => 'array',

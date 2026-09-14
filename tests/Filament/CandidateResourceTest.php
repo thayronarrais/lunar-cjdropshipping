@@ -106,6 +106,17 @@ final class CandidateResourceTest extends FilamentTestCase
         $this->assertSame(CandidateStatus::Pending, $unavailable->fresh()->status);
     }
 
+    public function test_bulk_reset_recovers_candidates_marked_shipping_too_high(): void
+    {
+        $candidate = $this->candidate('p-1', CandidateStatus::ShippingTooHigh);
+
+        Livewire::test(ListCandidates::class)
+            ->filterTable('status', 'shipping_too_high')
+            ->callTableBulkAction('reset', [$candidate]);
+
+        $this->assertSame(CandidateStatus::Pending, $candidate->fresh()->status);
+    }
+
     public function test_bulk_ignore_skips_imported_candidates(): void
     {
         $pending = $this->candidate('p-1', CandidateStatus::Pending);

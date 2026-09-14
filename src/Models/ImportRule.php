@@ -29,6 +29,9 @@ use Thayron\LunarCjDropshipping\Enums\PriceRounding;
  * @property int|null $brand_id
  * @property int|null $collection_id
  * @property int $max_pages
+ * @property string|null $ship_to_country
+ * @property string|null $max_shipping_percent
+ * @property int $max_quotes_per_run
  * @property Carbon|null $last_run_at
  * @property array<string, mixed>|null $last_run_stats
  */
@@ -44,6 +47,7 @@ class ImportRule extends Model
         'max_pages' => 5,
         'rounding' => 'none',
         'markup_percent' => 0,
+        'max_quotes_per_run' => 50,
     ];
 
     protected function casts(): array
@@ -56,10 +60,17 @@ class ImportRule extends Model
             'min_cost' => 'decimal:2',
             'max_cost' => 'decimal:2',
             'markup_percent' => 'decimal:2',
+            'max_shipping_percent' => 'decimal:2',
+            'max_quotes_per_run' => 'integer',
             'rounding' => PriceRounding::class,
             'last_run_at' => 'datetime',
             'last_run_stats' => 'array',
         ];
+    }
+
+    public function hasFreightFilter(): bool
+    {
+        return filled($this->ship_to_country) && $this->max_shipping_percent !== null;
     }
 
     /**
