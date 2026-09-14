@@ -12,11 +12,11 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Thayron\CjDropshipping\Exceptions\QuotaExceededException;
-use Thayron\LunarCjDropshipping\Actions\DiscoverCandidates;
+use Thayron\LunarCjDropshipping\Actions\CheckCandidateShipping;
 use Thayron\LunarCjDropshipping\Models\ImportRule;
 use Thayron\LunarCjDropshipping\Support\QuotaDelay;
 
-final class DiscoverCandidatesJob implements ShouldBeUnique, ShouldQueue
+final class CheckCandidateShippingJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable;
     use InteractsWithQueue;
@@ -39,7 +39,7 @@ final class DiscoverCandidatesJob implements ShouldBeUnique, ShouldQueue
 
     public function uniqueId(): string
     {
-        return 'cj-discover-'.$this->rule->id;
+        return 'cj-shipping-check-'.$this->rule->id;
     }
 
     /**
@@ -50,18 +50,12 @@ final class DiscoverCandidatesJob implements ShouldBeUnique, ShouldQueue
         return now()->addHours(48);
     }
 
-    public function handle(DiscoverCandidates $discover): void
+    public function handle(CheckCandidateShipping $check): void
     {
         try {
-            $discover->handle($this->rule);
+            $check->handle($this->rule);
         } catch (QuotaExceededException) {
             $this->release(QuotaDelay::seconds());
-
-            return;
-        }
-
-        if ($this->rule->hasFreightFilter()) {
-            CheckCandidateShippingJob::dispatch($this->rule);
         }
     }
 }
