@@ -8,6 +8,7 @@ use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use Lunar\Admin\Models\Staff;
+use Lunar\Models\Channel;
 use Lunar\Models\Country;
 use Thayron\LunarCjDropshipping\Enums\CandidateSource;
 use Thayron\LunarCjDropshipping\Enums\CandidateStatus;
@@ -46,12 +47,13 @@ final class ConfirmListingPageTest extends FilamentTestCase
     public function test_quotes_shipping_recommends_prices_and_lists_the_product(): void
     {
         $this->cj->fixture('product-detail')->fixture('stock-by-pid');
+        $tweed = Channel::factory()->create(['default' => false, 'handle' => 'tweed', 'name' => 'Paws & Tweed']);
 
         $page = Livewire::test(ConfirmListing::class, ['record' => $this->candidate->getRouteKey()])
             ->assertSet('variants.0.vid', 'v-1')
             ->assertSet('variants.0.cost_usd', '10.00')
             ->assertSet('variants.1.cost_usd', '8.13')
-            ->assertFormSet(['name' => 'Magnetic Phone Case', 'currency_code' => 'EUR']);
+            ->assertFormSet(['name' => 'Magnetic Phone Case', 'currency_code' => 'EUR', 'channel_ids' => [$this->channel->id]]);
 
         $this->cj
             ->success([['logisticName' => 'CJPacket Ordinary', 'logisticPrice' => '5.43', 'logisticAging' => '7-12']])
@@ -65,6 +67,7 @@ final class ConfirmListingPageTest extends FilamentTestCase
                 'currency_code' => 'GBP',
                 'markup_percent' => '100',
                 'rounding' => 'ends_99',
+                'channel_ids' => [$tweed->id],
             ])
             ->call('quoteShipping')
             ->assertFormSet(['shipping_method' => 'CJPacket Ordinary'])
@@ -81,6 +84,7 @@ final class ConfirmListingPageTest extends FilamentTestCase
         $this->assertSame(CandidateStatus::Approved, $candidate->status);
         $this->assertSame('Magnetic Case', $candidate->listing['name']);
         $this->assertSame('GB', $candidate->listing['ship_to_country']);
+        $this->assertSame([$tweed->id], $candidate->listing['channel_ids']);
         $this->assertSame(['vid' => 'v-1', 'selected' => true, 'cost_usd' => '10.00', 'shipping_cost_usd' => '5.43', 'price' => '24.99'], $candidate->listing['variants'][0]);
         $this->assertFalse($candidate->listing['variants'][1]['selected']);
         Queue::assertPushed(ImportProductJob::class);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Actions;
 
+use Lunar\Models\Channel;
 use Lunar\Models\Currency;
 use Lunar\Models\ProductType;
 use Thayron\LunarCjDropshipping\Enums\CandidateStatus;
@@ -49,6 +50,14 @@ final class ConfirmListing
 
         if (! ProductType::query()->whereKey($listing->productTypeId)->exists()) {
             throw ListingException::because('product_type_required');
+        }
+
+        if ($listing->channelIds === []) {
+            throw ListingException::because('sites_required');
+        }
+
+        if (Channel::query()->whereIn('id', $listing->channelIds)->count() !== count($listing->channelIds)) {
+            throw ListingException::because('sites_invalid');
         }
 
         $selected = $listing->selectedVariants();

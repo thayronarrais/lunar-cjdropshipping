@@ -46,7 +46,7 @@ final class ConfirmListingTest extends TestCase
         $this->assertSame('v-1', $listing->selectedVariants()[0]->vid);
         $this->assertSame([
             'name', 'ship_from_country', 'ship_to_country', 'currency_code', 'shipping_method', 'markup_percent',
-            'rounding', 'product_type_id', 'brand_id', 'collection_id', 'variants',
+            'rounding', 'product_type_id', 'brand_id', 'collection_id', 'channel_ids', 'variants',
         ], array_keys($listing->toArray()));
     }
 
@@ -80,6 +80,8 @@ final class ConfirmListingTest extends TestCase
             'no shipping' => [['variants' => [['vid' => 'v-1', 'selected' => true, 'cost_usd' => '3.47', 'shipping_cost_usd' => null, 'price' => '14.99']]], 'shipping_missing'],
             'no cost' => [['variants' => [['vid' => 'v-1', 'selected' => true, 'cost_usd' => null, 'shipping_cost_usd' => '5.43', 'price' => '14.99']]], 'cost_missing'],
             'negative margin' => [['variants' => [['vid' => 'v-1', 'selected' => true, 'cost_usd' => '3.47', 'shipping_cost_usd' => '5.43', 'price' => '5.00']]], 'negative_margin'],
+            'no sites' => [['channel_ids' => []], 'sites_required'],
+            'unknown site' => [['channel_ids' => [999999]], 'sites_invalid'],
         ];
     }
 
@@ -153,6 +155,7 @@ final class ConfirmListingTest extends TestCase
             productTypeId: $this->productType->id,
             brandId: null,
             collectionId: null,
+            channelIds: [$this->channel->id],
             variants: [
                 new ListingVariant('v-1', true, '3.47', '5.43', '14.99'),
                 new ListingVariant('v-2', false, '3.47', '5.43', null),

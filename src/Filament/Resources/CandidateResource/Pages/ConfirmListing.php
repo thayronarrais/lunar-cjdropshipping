@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Filament\Resources\CandidateResource\Pages;
 
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -13,6 +14,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Lunar\Models\Brand;
+use Lunar\Models\Channel;
 use Lunar\Models\Collection;
 use Lunar\Models\Country;
 use Lunar\Models\Currency;
@@ -133,6 +135,9 @@ class ConfirmListing extends Page implements HasForms
 
         $rule = $candidate->importRule;
 
+        $defaultChannelIds = array_filter([Channel::getDefault()?->id]);
+        $channelIds = $listing !== null && $listing->channelIds !== [] ? $listing->channelIds : $defaultChannelIds;
+
         $this->getForm('form')?->fill($listing !== null ? [
             'name' => $listing->name,
             'ship_from_country' => $listing->shipFromCountry,
@@ -144,6 +149,7 @@ class ConfirmListing extends Page implements HasForms
             'product_type_id' => $listing->productTypeId,
             'brand_id' => $listing->brandId,
             'collection_id' => $listing->collectionId,
+            'channel_ids' => $channelIds,
         ] : [
             'name' => $candidate->name,
             'ship_from_country' => array_key_first($this->shipFromOptions),
@@ -155,6 +161,7 @@ class ConfirmListing extends Page implements HasForms
             'product_type_id' => $rule !== null ? $rule->product_type_id : ProductType::query()->value('id'),
             'brand_id' => $rule?->brand_id,
             'collection_id' => $rule?->collection_id,
+            'channel_ids' => $channelIds,
         ]);
     }
 
@@ -196,6 +203,10 @@ class ConfirmListing extends Page implements HasForms
                         return $collections->mapWithKeys(fn (Collection $collection): array => [$collection->id => (string) $collection->translateAttribute('name')])->all();
                     })
                     ->searchable(),
+                CheckboxList::make('channel_ids')->label($label('sites'))
+                    ->options(fn (): array => Channel::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->required()
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -511,6 +522,7 @@ class ConfirmListing extends Page implements HasForms
             productTypeId: (int) ($this->data['product_type_id'] ?? 0),
             brandId: filled($this->data['brand_id'] ?? null) ? (int) $this->data['brand_id'] : null,
             collectionId: filled($this->data['collection_id'] ?? null) ? (int) $this->data['collection_id'] : null,
+            channelIds: array_values(array_unique(array_map('intval', (array) ($this->data['channel_ids'] ?? [])))),
             variants: array_map(
                 fn (array $row): ListingVariant => new ListingVariant(
                     $row['vid'],

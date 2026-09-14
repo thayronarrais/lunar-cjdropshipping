@@ -156,6 +156,7 @@ return [
             'product_type' => 'Product type',
             'brand' => 'Brand',
             'collection' => 'Collection',
+            'sites' => 'Sites',
         ],
         'columns' => [
             'selected' => 'Import',
@@ -188,6 +189,8 @@ return [
             'currency_invalid' => 'Choose an enabled currency.',
             'method_required' => 'Quote shipping and choose a method.',
             'product_type_required' => 'Choose a product type.',
+            'sites_required' => 'Choose at least one site.',
+            'sites_invalid' => 'One of the chosen sites no longer exists.',
             'no_variants' => 'Select at least one variant.',
             'price_required' => 'Every selected variant needs a price above zero.',
             'price_precision' => 'Prices can have at most :decimals decimal places.',

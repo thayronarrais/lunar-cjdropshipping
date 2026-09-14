@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Thayron\LunarCjDropshipping\Tests\Feature\Import;
 
+use Lunar\Models\Channel;
 use Lunar\Models\Collection;
 use Lunar\Models\Price;
 use Lunar\Models\Product;
@@ -241,6 +242,59 @@ final class ImportProductTest extends TestCase
         $this->assertSame(CandidateStatus::Imported, $candidate->fresh()->status);
     }
 
+    public function test_enables_the_product_only_on_the_listings_chosen_sites(): void
+    {
+        $this->createLunarBaseline();
+        $tweed = Channel::factory()->create(['default' => false, 'handle' => 'tweed', 'name' => 'Paws & Tweed']);
+        $candidate = $this->listedCandidate([
+            new ListingVariant('v-1', true, '10.00', '5.43', '24.99'),
+        ], channelIds: [$tweed->id]);
+        $this->cj->fixture('product-detail')->fixture('stock-by-pid');
+
+        app(ImportProduct::class)->handle($candidate);
+
+        $product = Product::query()->sole();
+        $enabledChannelIds = $product->channels()->wherePivot('enabled', true)->pluck('lunar_channels.id')->all();
+        $this->assertSame([$tweed->id], $enabledChannelIds);
+    }
+
+    public function test_enables_the_product_on_the_default_channel_when_the_listing_has_no_sites(): void
+    {
+        $this->createLunarBaseline();
+        $data = (new Listing(
+            name: 'Plaid Dog Jacket',
+            shipFromCountry: 'CN',
+            shipToCountry: 'GB',
+            currencyCode: 'GBP',
+            shippingMethod: 'CJPacket Ordinary',
+            markupPercent: '100.00',
+            rounding: PriceRounding::Ends99,
+            productTypeId: $this->productType->id,
+            brandId: null,
+            collectionId: null,
+            channelIds: [],
+            variants: [new ListingVariant('v-1', true, '10.00', '5.43', '24.99')],
+        ))->toArray();
+        unset($data['channel_ids']);
+
+        $candidate = Candidate::create([
+            'cj_product_id' => 'p-100',
+            'source' => CandidateSource::Catalog,
+            'name' => 'Plaid Dog Jacket',
+            'status' => CandidateStatus::Approved,
+            'payload' => [],
+            'discovered_at' => now(),
+            'listing' => $data,
+        ]);
+        $this->cj->fixture('product-detail')->fixture('stock-by-pid');
+
+        app(ImportProduct::class)->handle($candidate);
+
+        $product = Product::query()->sole();
+        $enabledChannelIds = $product->channels()->wherePivot('enabled', true)->pluck('lunar_channels.id')->all();
+        $this->assertSame([$this->channel->id], $enabledChannelIds);
+    }
+
     public function test_fails_when_a_selected_variant_is_gone_from_cj(): void
     {
         $this->createLunarBaseline();
@@ -259,8 +313,9 @@ final class ImportProductTest extends TestCase
 
     /**
      * @param  list<ListingVariant>  $variants
+     * @param  list<int>  $channelIds
      */
-    private function listedCandidate(array $variants): Candidate
+    private function listedCandidate(array $variants, array $channelIds = []): Candidate
     {
         return Candidate::create([
             'cj_product_id' => 'p-100',
@@ -280,6 +335,7 @@ final class ImportProductTest extends TestCase
                 productTypeId: $this->productType->id,
                 brandId: null,
                 collectionId: null,
+                channelIds: $channelIds,
                 variants: $variants,
             ))->toArray(),
         ]);

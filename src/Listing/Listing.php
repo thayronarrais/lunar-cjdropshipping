@@ -12,6 +12,7 @@ use Thayron\LunarCjDropshipping\Enums\PriceRounding;
 final readonly class Listing
 {
     /**
+     * @param  list<int>  $channelIds
      * @param  list<ListingVariant>  $variants
      */
     public function __construct(
@@ -26,6 +27,7 @@ final readonly class Listing
         public ?int $brandId,
         public ?int $collectionId,
         public array $variants,
+        public array $channelIds = [],
     ) {}
 
     /**
@@ -34,6 +36,7 @@ final readonly class Listing
     public static function fromArray(array $data): self
     {
         $variants = is_array($data['variants'] ?? null) ? $data['variants'] : [];
+        $channelIds = is_array($data['channel_ids'] ?? null) ? $data['channel_ids'] : [];
 
         return new self(
             (string) ($data['name'] ?? ''),
@@ -47,6 +50,7 @@ final readonly class Listing
             filled($data['brand_id'] ?? null) ? (int) $data['brand_id'] : null,
             filled($data['collection_id'] ?? null) ? (int) $data['collection_id'] : null,
             array_values(array_map(ListingVariant::fromArray(...), array_filter($variants, is_array(...)))),
+            array_values(array_unique(array_map('intval', $channelIds))),
         );
     }
 
@@ -66,6 +70,7 @@ final readonly class Listing
             'product_type_id' => $this->productTypeId,
             'brand_id' => $this->brandId,
             'collection_id' => $this->collectionId,
+            'channel_ids' => $this->channelIds,
             'variants' => array_map(fn (ListingVariant $variant): array => $variant->toArray(), $this->variants),
         ];
     }

@@ -108,7 +108,11 @@ final class ImportProduct
             ]),
         ]);
 
-        $product->scheduleChannel(Channel::getDefault());
+        $channels = $listing !== null && $listing->channelIds !== []
+            ? Channel::query()->whereIn('id', $listing->channelIds)->get()
+            : collect();
+
+        $product->scheduleChannel($channels->isNotEmpty() ? $channels : Channel::getDefault());
 
         if ($settings['collection_id'] !== null) {
             $product->collections()->attach($settings['collection_id'], ['position' => 1]);

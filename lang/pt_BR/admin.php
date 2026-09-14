@@ -156,6 +156,7 @@ return [
             'product_type' => 'Tipo de produto',
             'brand' => 'Marca',
             'collection' => 'Coleção',
+            'sites' => 'Sites',
         ],
         'columns' => [
             'selected' => 'Importar',
@@ -188,6 +189,8 @@ return [
             'currency_invalid' => 'Escolha uma moeda ativa.',
             'method_required' => 'Cote o frete e escolha um método.',
             'product_type_required' => 'Escolha um tipo de produto.',
+            'sites_required' => 'Escolha pelo menos um site.',
+            'sites_invalid' => 'Um dos sites escolhidos não existe mais.',
             'no_variants' => 'Selecione pelo menos uma variação.',
             'price_required' => 'Toda variação selecionada precisa de um preço acima de zero.',
             'price_precision' => 'Os preços podem ter no máximo :decimals casas decimais.',
