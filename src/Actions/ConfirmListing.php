@@ -13,10 +13,14 @@ use Thayron\LunarCjDropshipping\Jobs\ImportProductJob;
 use Thayron\LunarCjDropshipping\Listing\Listing;
 use Thayron\LunarCjDropshipping\Models\Candidate;
 use Thayron\LunarCjDropshipping\Pricing\ListingPriceCalculator;
+use Thayron\LunarCjDropshipping\Pricing\VatResolver;
 
 final class ConfirmListing
 {
-    public function __construct(private readonly ListingPriceCalculator $prices) {}
+    public function __construct(
+        private readonly ListingPriceCalculator $prices,
+        private readonly VatResolver $vat,
+    ) {}
 
     /**
      * @throws ListingException
@@ -66,6 +70,7 @@ final class ConfirmListing
             throw ListingException::because('no_variants');
         }
 
+        $vat = $this->vat->forCountry($listing->shipToCountry);
         $negative = false;
         $decimals = (int) $currency->decimal_places;
 
@@ -86,7 +91,7 @@ final class ConfirmListing
                 throw ListingException::because('cost_missing', ['sku' => $variant->vid]);
             }
 
-            $margin = $this->prices->margin($variant->price, $variant->costUsd, $variant->shippingCostUsd, $currency);
+            $margin = $this->prices->margin($variant->price, $variant->costUsd, $variant->shippingCostUsd, $currency, $vat);
             $negative = $negative || ($margin !== null && bccomp($margin, '0', 2) < 0);
         }
 

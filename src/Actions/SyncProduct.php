@@ -18,6 +18,8 @@ use Thayron\LunarCjDropshipping\Mapping\StockResolver;
 use Thayron\LunarCjDropshipping\Models\ProductLink;
 use Thayron\LunarCjDropshipping\Models\VariantLink;
 use Thayron\LunarCjDropshipping\Pricing\ListingPriceCalculator;
+use Thayron\LunarCjDropshipping\Pricing\Vat;
+use Thayron\LunarCjDropshipping\Pricing\VatResolver;
 use Thayron\LunarCjDropshipping\Support\Throttle;
 
 /**
@@ -31,6 +33,7 @@ final class SyncProduct
         private readonly StockResolver $stock,
         private readonly VariantWriter $variants,
         private readonly ListingPriceCalculator $listingPrices,
+        private readonly VatResolver $vat,
     ) {}
 
     public function handle(ProductLink $link): void
@@ -56,6 +59,7 @@ final class SyncProduct
 
             $currency = $link->price_locked ? Currency::query()->where('code', (string) $link->currency_code)->first() : null;
             $minimumMargin = (string) config('lunar-cjdropshipping.pricing.min_margin_percent', 20);
+            $vat = $this->vat->forCountry($link->ship_to_country);
             $marginAtRisk = false;
 
             foreach ($link->variantLinks()->with('variant')->get() as $variantLink) {
@@ -81,7 +85,7 @@ final class SyncProduct
                 $costChanged = $variantLink->cost_usd === null || ($cost !== null && bccomp($cost, (string) $variantLink->cost_usd, 2) !== 0);
 
                 if ($link->price_locked) {
-                    $marginAtRisk = $marginAtRisk || $this->isMarginAtRisk($variantLink, $cost ?? $variantLink->cost_usd, $currency, $minimumMargin);
+                    $marginAtRisk = $marginAtRisk || $this->isMarginAtRisk($variantLink, $cost ?? $variantLink->cost_usd, $currency, $minimumMargin, $vat);
                 } elseif ($cost !== null && ($costChanged || $this->isMissingPrices($variant, $enabledCurrencyIds))) {
                     $this->variants->writePrices($variant, $cost, $link);
                 }
@@ -121,13 +125,13 @@ final class SyncProduct
         return $priced < count($enabledCurrencyIds);
     }
 
-    private function isMarginAtRisk(VariantLink $variantLink, ?string $costUsd, ?Currency $currency, string $minimumMargin): bool
+    private function isMarginAtRisk(VariantLink $variantLink, ?string $costUsd, ?Currency $currency, string $minimumMargin, Vat $vat): bool
     {
         if ($currency === null || $costUsd === null || $variantLink->price === null || $variantLink->shipping_cost_usd === null) {
             return true;
         }
 
-        $margin = $this->listingPrices->margin((string) $variantLink->price, $costUsd, (string) $variantLink->shipping_cost_usd, $currency);
+        $margin = $this->listingPrices->margin((string) $variantLink->price, $costUsd, (string) $variantLink->shipping_cost_usd, $currency, $vat);
 
         return $margin === null || bccomp($margin, $minimumMargin, 2) < 0;
     }

@@ -10,6 +10,7 @@ use Thayron\LunarCjDropshipping\Actions\SyncProduct;
 use Thayron\LunarCjDropshipping\Models\ProductLink;
 use Thayron\LunarCjDropshipping\Models\VariantLink;
 use Thayron\LunarCjDropshipping\Tests\Support\CreatesLunarBaseline;
+use Thayron\LunarCjDropshipping\Tests\Support\CreatesVatZone;
 use Thayron\LunarCjDropshipping\Tests\Support\FakeCj;
 use Thayron\LunarCjDropshipping\Tests\Support\ImportsFixtureProduct;
 use Thayron\LunarCjDropshipping\Tests\TestCase;
@@ -17,6 +18,7 @@ use Thayron\LunarCjDropshipping\Tests\TestCase;
 final class SyncLockedPriceTest extends TestCase
 {
     use CreatesLunarBaseline;
+    use CreatesVatZone;
     use ImportsFixtureProduct;
 
     private FakeCj $cj;
@@ -75,6 +77,25 @@ final class SyncLockedPriceTest extends TestCase
         app(SyncProduct::class)->handle($this->link->fresh());
 
         $this->assertSame(['v-10'], $this->link->fresh()->new_cj_variant_ids);
+    }
+
+    public function test_flags_margin_at_risk_when_destination_vat_eats_the_margin(): void
+    {
+        $this->createVatZone('GB', '20', inclusive: true);
+        $this->link->forceFill(['ship_to_country' => 'GB'])->save();
+
+        $this->syncWithCost('20.00');
+
+        $this->assertTrue($this->link->fresh()->margin_at_risk);
+    }
+
+    public function test_the_same_cost_is_not_at_risk_without_a_destination(): void
+    {
+        $this->createVatZone('GB', '20', inclusive: true);
+
+        $this->syncWithCost('20.00');
+
+        $this->assertFalse($this->link->fresh()->margin_at_risk);
     }
 
     private function syncWithCost(string $cost): void

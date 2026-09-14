@@ -16,11 +16,13 @@ use Thayron\LunarCjDropshipping\Listing\Listing;
 use Thayron\LunarCjDropshipping\Listing\ListingVariant;
 use Thayron\LunarCjDropshipping\Models\Candidate;
 use Thayron\LunarCjDropshipping\Tests\Support\CreatesLunarBaseline;
+use Thayron\LunarCjDropshipping\Tests\Support\CreatesVatZone;
 use Thayron\LunarCjDropshipping\Tests\TestCase;
 
 final class ConfirmListingTest extends TestCase
 {
     use CreatesLunarBaseline;
+    use CreatesVatZone;
 
     private Candidate $candidate;
 
@@ -130,6 +132,23 @@ final class ConfirmListingTest extends TestCase
         app(ConfirmListing::class)->handle($this->candidate, $listing, true);
 
         $this->assertSame(CandidateStatus::Approved, $this->candidate->fresh()->status);
+    }
+
+    public function test_rejects_a_price_that_only_loses_money_after_vat(): void
+    {
+        $this->createVatZone('GB', '20', inclusive: true);
+        $listing = Listing::fromArray([...$this->listing()->toArray(), 'variants' => [
+            ['vid' => 'v-1', 'selected' => true, 'cost_usd' => '3.47', 'shipping_cost_usd' => '5.43', 'price' => '8.00'],
+        ]]);
+
+        try {
+            app(ConfirmListing::class)->handle($this->candidate, $listing, false);
+            $this->fail('Expected ListingException.');
+        } catch (ListingException $exception) {
+            $this->assertSame(__('lunar-cjdropshipping::admin.listing.errors.negative_margin'), $exception->getMessage());
+        }
+
+        $this->assertSame(CandidateStatus::Pending, $this->candidate->fresh()->status);
     }
 
     public function test_only_pending_or_failed_items_can_be_confirmed(): void
