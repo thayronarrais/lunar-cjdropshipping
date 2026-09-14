@@ -36,7 +36,10 @@ use Thayron\LunarCjDropshipping\Logistics\FreightQuoter;
 use Thayron\LunarCjDropshipping\Models\Candidate;
 use Thayron\LunarCjDropshipping\Pricing\CostParser;
 use Thayron\LunarCjDropshipping\Pricing\ListingPriceCalculator;
+use Thayron\LunarCjDropshipping\Pricing\Vat;
+use Thayron\LunarCjDropshipping\Pricing\VatResolver;
 use Thayron\LunarCjDropshipping\Support\QuotaDelay;
+use Thayron\LunarCjDropshipping\Support\SiteCurrencies;
 use Thayron\LunarCjDropshipping\Support\Throttle;
 use Throwable;
 
@@ -364,7 +367,67 @@ class ConfirmListing extends Page implements HasForms
             return null;
         }
 
-        return app(ListingPriceCalculator::class)->margin((string) $row['price'], $row['cost_usd'], $shipping, $currency);
+        return app(ListingPriceCalculator::class)->margin((string) $row['price'], $row['cost_usd'], $shipping, $currency, $this->vat());
+    }
+
+    public function profitFor(int $index): ?string
+    {
+        $row = $this->variants[$index] ?? null;
+        $shipping = $this->shippingFor($index);
+        $currency = $this->currency();
+
+        if ($row === null || $row['cost_usd'] === null || $shipping === null || $currency === null || ! is_numeric($row['price'])) {
+            return null;
+        }
+
+        return app(ListingPriceCalculator::class)->profit((string) $row['price'], $row['cost_usd'], $shipping, $currency, $this->vat());
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function checksFor(int $index): array
+    {
+        $row = $this->variants[$index] ?? null;
+        $shipping = $this->shippingFor($index);
+        $total = $this->totalFor($index);
+        $checks = [];
+
+        if ($row !== null && is_numeric($row['suggested_usd']) && $total !== null && bccomp((string) $row['suggested_usd'], $total, 2) < 0) {
+            $checks[] = 'rrp_below_cost';
+        }
+
+        if ($row !== null && $row['cost_usd'] !== null && $shipping !== null && bccomp($shipping, $row['cost_usd'], 2) > 0) {
+            $checks[] = 'shipping_over_product';
+        }
+
+        return $checks;
+    }
+
+    /**
+     * Names of the chosen sites that sell in a different currency than the one selected.
+     *
+     * @return list<string>
+     */
+    public function currencyMismatchSites(): array
+    {
+        $code = (string) ($this->data['currency_code'] ?? '');
+        $channelIds = array_values(array_unique(array_map('intval', (array) ($this->data['channel_ids'] ?? []))));
+
+        if ($code === '' || $channelIds === []) {
+            return [];
+        }
+
+        $mismatched = array_keys(array_filter(
+            app(SiteCurrencies::class)->for($channelIds),
+            fn (string $siteCurrency): bool => $siteCurrency !== $code,
+        ));
+
+        if ($mismatched === []) {
+            return [];
+        }
+
+        return Channel::query()->whereIn('id', $mismatched)->orderBy('name')->pluck('name')->map(fn ($name): string => (string) $name)->values()->all();
     }
 
     public function minimumMargin(): string
@@ -385,6 +448,11 @@ class ConfirmListing extends Page implements HasForms
         $code = (string) ($this->data['currency_code'] ?? '');
 
         return $code === '' ? null : Currency::query()->where('code', $code)->where('enabled', true)->first();
+    }
+
+    private function vat(): Vat
+    {
+        return app(VatResolver::class)->forCountry((string) ($this->data['ship_to_country'] ?? ''));
     }
 
     private function clearQuote(): void

@@ -33,11 +33,17 @@
                 </x-filament::button>
             </div>
 
+            @if (($mismatchSites = $this->currencyMismatchSites()) !== [])
+                <div class="rounded-lg p-3 text-sm" style="background-color:rgba(var(--warning-500),0.12);color:rgb(var(--warning-700))">
+                    {{ __('lunar-cjdropshipping::admin.listing.currency_mismatch', ['currency' => $data['currency_code'] ?? '', 'sites' => implode(', ', $mismatchSites)]) }}
+                </div>
+            @endif
+
             <div style="overflow-x:auto" class="rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
                 <table class="w-full text-start text-sm">
                     <thead>
                         <tr class="text-gray-500 dark:text-gray-400">
-                            @foreach (['selected', 'image', 'sku', 'variant', 'cost', 'shipping', 'total', 'rrp', 'price', 'margin'] as $column)
+                            @foreach (['selected', 'image', 'sku', 'variant', 'cost', 'shipping', 'total', 'rrp', 'price', 'profit', 'margin', 'checks'] as $column)
                                 <th class="px-3 py-2 text-start font-medium">{{ __('lunar-cjdropshipping::admin.listing.columns.'.$column) }}</th>
                             @endforeach
                         </tr>
@@ -49,6 +55,8 @@
                                 $total = $this->totalFor($index);
                                 $margin = $this->marginFor($index);
                                 $belowMinimum = $margin !== null && bccomp($margin, $this->minimumMargin(), 2) < 0;
+                                $profit = $this->profitFor($index);
+                                $checks = $this->checksFor($index);
                             @endphp
 
                             <tr wire:key="variant-{{ $row['vid'] }}" class="border-t border-gray-200 dark:border-white/5">
@@ -71,8 +79,16 @@
                                         <x-filament::input type="number" step="0.01" min="0" wire:model.live.debounce.500ms="variants.{{ $index }}.price" />
                                     </x-filament::input.wrapper>
                                 </td>
+                                <td class="px-3 py-2 font-medium" style="color:rgb(var(--{{ $profit === null ? 'gray' : (bccomp($profit, '0', 2) <= 0 ? 'danger' : ($belowMinimum ? 'warning' : 'success')) }}-600))">
+                                    {{ $profit !== null ? $profit.' '.($data['currency_code'] ?? '') : '—' }}
+                                </td>
                                 <td class="px-3 py-2 font-medium" style="color:rgb(var(--{{ $belowMinimum ? 'danger' : 'success' }}-600))">
                                     {{ $margin !== null ? $margin.'%' : '—' }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    @foreach ($checks as $check)
+                                        <span title="{{ __('lunar-cjdropshipping::admin.listing.checks.'.$check) }}" style="color:rgb(var(--warning-600))">⚠️ {{ __('lunar-cjdropshipping::admin.listing.checks.'.$check) }}</span><br>
+                                    @endforeach
                                 </td>
                             </tr>
                         @endforeach

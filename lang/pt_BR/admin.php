@@ -144,6 +144,7 @@ return [
         'listed' => 'Enviado para importação.',
         'prices_cleared' => 'Moeda alterada: os preços foram limpos. Recomende ou digite novamente.',
         'method_option' => ':name — US$ :price — :aging dias',
+        'currency_mismatch' => 'A moeda escolhida (:currency) é diferente da moeda de: :sites.',
         'accept_negative_margin' => 'Aceito margem negativa',
         'fields' => [
             'name' => 'Nome do produto',
@@ -168,7 +169,13 @@ return [
             'total' => 'Custo total',
             'rrp' => 'Preço sugerido CJ',
             'price' => 'Seu preço',
+            'profit' => 'Lucro',
             'margin' => 'Margem',
+            'checks' => 'Alertas',
+        ],
+        'checks' => [
+            'rrp_below_cost' => 'O RRP da CJ é menor que o custo com frete.',
+            'shipping_over_product' => 'O frete custa mais que o produto.',
         ],
         'bulk' => [
             'percent' => 'Ajustar em %',

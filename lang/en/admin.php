@@ -144,6 +144,7 @@ return [
         'listed' => 'Sent for import.',
         'prices_cleared' => 'Currency changed: prices were cleared. Recommend or enter them again.',
         'method_option' => ':name — US$ :price — :aging days',
+        'currency_mismatch' => 'The chosen currency (:currency) differs from the currency of: :sites.',
         'accept_negative_margin' => 'I accept a negative margin',
         'fields' => [
             'name' => 'Product name',
@@ -168,7 +169,13 @@ return [
             'total' => 'Total cost',
             'rrp' => 'CJ RRP',
             'price' => 'Your price',
+            'profit' => 'Profit',
             'margin' => 'Margin',
+            'checks' => 'Checks',
+        ],
+        'checks' => [
+            'rrp_below_cost' => 'CJ RRP is below the total cost with shipping.',
+            'shipping_over_product' => 'Shipping costs more than the product.',
         ],
         'bulk' => [
             'percent' => 'Adjust by %',
