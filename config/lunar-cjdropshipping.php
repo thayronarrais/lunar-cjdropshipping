@@ -45,6 +45,9 @@ return [
         'usd_to_default_rate' => env('CJ_USD_TO_DEFAULT_RATE'),
         // Locked listing prices whose margin falls below this percentage are flagged "margin at risk" on sync.
         'min_margin_percent' => 20,
+        // Card payment fee deducted when showing listing profit: percent of the price plus a fixed amount (listing currency).
+        'card_fee_percent' => 1.5,
+        'card_fee_fixed' => 0.20,
     ],
 
     'freight' => [

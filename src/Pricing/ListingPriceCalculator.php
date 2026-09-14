@@ -25,23 +25,56 @@ final class ListingPriceCalculator
     }
 
     /**
-     * Margin as a percentage of the price, or null when the price is not positive.
+     * Profit per unit in the listing currency after VAT (when prices include it), card fee and converted cost, or null when the price is not positive.
      */
-    public function margin(string $price, string $costUsd, string $shippingUsd, Currency $currency): ?string
+    public function profit(string $price, string $costUsd, string $shippingUsd, Currency $currency, ?Vat $vat = null): ?string
     {
-        if (bccomp($price, '0', self::SCALE) <= 0) {
+        $profit = $this->exactProfit($price, $costUsd, $shippingUsd, $currency, $vat);
+
+        return $profit === null ? null : self::roundHalfUp($profit, (int) $currency->decimal_places);
+    }
+
+    /**
+     * Profit as a percentage of the price, or null when the price is not positive.
+     */
+    public function margin(string $price, string $costUsd, string $shippingUsd, Currency $currency, ?Vat $vat = null): ?string
+    {
+        $profit = $this->exactProfit($price, $costUsd, $shippingUsd, $currency, $vat);
+
+        if ($profit === null) {
             return null;
         }
 
-        $total = bcmul(bcadd($costUsd, $shippingUsd, self::SCALE), $this->prices->usdToCurrencyRate($currency), self::SCALE);
-        $ratio = bcdiv(bcsub($price, $total, self::SCALE), $price, self::SCALE);
-
-        return self::roundHalfUp(bcmul($ratio, '100', self::SCALE), 2);
+        return self::roundHalfUp(bcmul(bcdiv($profit, $price, self::SCALE), '100', self::SCALE), 2);
     }
 
     public function inCurrency(string $usd, Currency $currency): string
     {
         return self::roundHalfUp(bcmul($usd, $this->prices->usdToCurrencyRate($currency), self::SCALE), (int) $currency->decimal_places);
+    }
+
+    private function exactProfit(string $price, string $costUsd, string $shippingUsd, Currency $currency, ?Vat $vat): ?string
+    {
+        if (bccomp($price, '0', self::SCALE) <= 0) {
+            return null;
+        }
+
+        $vat ??= Vat::none();
+        $vatAmount = $vat->inclusive
+            ? bcdiv(bcmul($price, $vat->percent, self::SCALE), bcadd('100', $vat->percent, self::SCALE), self::SCALE)
+            : '0';
+
+        $fee = bcadd(bcdiv(bcmul($price, self::configNumber('card_fee_percent', '1.5'), self::SCALE), '100', self::SCALE), self::configNumber('card_fee_fixed', '0.20'), self::SCALE);
+        $cost = bcmul(bcadd($costUsd, $shippingUsd, self::SCALE), $this->prices->usdToCurrencyRate($currency), self::SCALE);
+
+        return bcsub(bcsub(bcsub($price, $vatAmount, self::SCALE), $fee, self::SCALE), $cost, self::SCALE);
+    }
+
+    private static function configNumber(string $key, string $default): string
+    {
+        $value = config("lunar-cjdropshipping.pricing.{$key}", $default);
+
+        return is_numeric($value) ? (string) $value : $default;
     }
 
     public static function roundHalfUp(string $value, int $decimals): string

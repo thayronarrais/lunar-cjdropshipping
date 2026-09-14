@@ -7,6 +7,7 @@ namespace Thayron\LunarCjDropshipping\Tests\Feature\Pricing;
 use Thayron\LunarCjDropshipping\Enums\PriceRounding;
 use Thayron\LunarCjDropshipping\Pricing\ListingPriceCalculator;
 use Thayron\LunarCjDropshipping\Pricing\PriceCalculator;
+use Thayron\LunarCjDropshipping\Pricing\Vat;
 use Thayron\LunarCjDropshipping\Tests\Support\CreatesLunarBaseline;
 use Thayron\LunarCjDropshipping\Tests\TestCase;
 
@@ -39,11 +40,36 @@ final class ListingPriceCalculatorTest extends TestCase
         $this->assertSame('16.48', $this->calculator->recommend('3.47', '5.43', '100', PriceRounding::None, $this->eur));
     }
 
-    public function test_margin_is_a_percentage_of_the_price(): void
+    public function test_margin_is_profit_after_card_fee_as_a_percentage_of_the_price(): void
     {
-        $this->assertSame('53.27', $this->calculator->margin('14.99', '3.47', '5.43', $this->gbp));
-        $this->assertSame('-40.09', $this->calculator->margin('5.00', '3.47', '5.43', $this->gbp));
+        $this->assertSame('50.44', $this->calculator->margin('14.99', '3.47', '5.43', $this->gbp));
+        $this->assertSame('-45.59', $this->calculator->margin('5.00', '3.47', '5.43', $this->gbp));
         $this->assertNull($this->calculator->margin('0', '3.47', '5.43', $this->gbp));
+    }
+
+    public function test_margin_deducts_inclusive_vat(): void
+    {
+        $this->assertSame('33.77', $this->calculator->margin('14.99', '3.47', '5.43', $this->gbp, new Vat('20', true)));
+    }
+
+    public function test_profit_deducts_vat_card_fee_and_converted_cost(): void
+    {
+        $this->assertSame('7.56', $this->calculator->profit('14.99', '3.47', '5.43', $this->gbp));
+        $this->assertSame('5.06', $this->calculator->profit('14.99', '3.47', '5.43', $this->gbp, new Vat('20', true)));
+        $this->assertSame('-2.28', $this->calculator->profit('5.00', '3.47', '5.43', $this->gbp));
+        $this->assertNull($this->calculator->profit('0', '3.47', '5.43', $this->gbp));
+    }
+
+    public function test_exclusive_vat_is_not_deducted(): void
+    {
+        $this->assertSame('7.56', $this->calculator->profit('14.99', '3.47', '5.43', $this->gbp, new Vat('20', false)));
+    }
+
+    public function test_card_fee_comes_from_config(): void
+    {
+        config(['lunar-cjdropshipping.pricing.card_fee_percent' => 0, 'lunar-cjdropshipping.pricing.card_fee_fixed' => 0]);
+
+        $this->assertSame('7.99', $this->calculator->profit('14.99', '3.47', '5.43', $this->gbp));
     }
 
     public function test_converts_usd_amounts(): void

@@ -19,6 +19,8 @@ final class LunarCjDropshippingServiceProvider extends ServiceProvider
 
         $this->app->singleton(Support\Throttle::class, fn () => new Support\Throttle((int) config('lunar-cjdropshipping.requests_per_second', 1)));
 
+        $this->app->scoped(Pricing\VatResolver::class);
+
         $this->app->bind(Media\ImageDownloader::class, Media\HttpImageDownloader::class);
     }
 
