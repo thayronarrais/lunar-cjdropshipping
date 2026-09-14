@@ -57,7 +57,7 @@ final class CheckCandidateShipping
             } catch (QuotaExceededException $exception) {
                 throw $exception;
             } catch (NotFoundException) {
-                $candidate->forceFill(['status' => CandidateStatus::Unavailable, 'shipping_checked_at' => now()])->save();
+                $this->recordCheck($candidate, ['shipping_checked_at' => now()], CandidateStatus::Unavailable);
                 $stats['skipped']++;
 
                 continue;
@@ -71,17 +71,38 @@ final class CheckCandidateShipping
 
             $tooHigh = $shipping === null || $this->exceedsLimit($rule, $candidate, $shipping);
 
-            $candidate->forceFill([
-                'shipping_usd' => $shipping,
-                'shipping_checked_at' => now(),
-                'status' => $tooHigh ? CandidateStatus::ShippingTooHigh : CandidateStatus::Pending,
-            ])->save();
+            $updated = $this->recordCheck(
+                $candidate,
+                ['shipping_usd' => $shipping, 'shipping_checked_at' => now()],
+                $tooHigh ? CandidateStatus::ShippingTooHigh : CandidateStatus::Pending,
+            );
 
             $stats['checked']++;
-            $stats['too_high'] += $tooHigh ? 1 : 0;
+            $stats['too_high'] += ($tooHigh && $updated) ? 1 : 0;
         }
 
         return $stats;
+    }
+
+    /**
+     * Persists the outcome of a shipping check for one candidate without overwriting a status the
+     * admin may have changed while the check (which can take minutes, throttled by CJ quota) was
+     * running. `$alwaysAttributes` (shipping_usd and/or shipping_checked_at) are written
+     * unconditionally; the status only moves to `$statusIfPending` while the row is still Pending,
+     * so an Approved/Importing/Imported/Ignored candidate keeps whatever the admin set.
+     *
+     * @param  array<string, mixed>  $alwaysAttributes
+     */
+    private function recordCheck(Candidate $candidate, array $alwaysAttributes, CandidateStatus $statusIfPending): bool
+    {
+        if ($alwaysAttributes !== []) {
+            Candidate::query()->whereKey($candidate->id)->update($alwaysAttributes);
+        }
+
+        return Candidate::query()
+            ->whereKey($candidate->id)
+            ->where('status', CandidateStatus::Pending->value)
+            ->update(['status' => $statusIfPending->value]) > 0;
     }
 
     private function cheapestShipping(ImportRule $rule, Candidate $candidate): ?string

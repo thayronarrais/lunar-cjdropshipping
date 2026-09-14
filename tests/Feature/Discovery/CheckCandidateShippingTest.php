@@ -127,6 +127,49 @@ final class CheckCandidateShippingTest extends TestCase
         $this->assertSame(CandidateStatus::Unavailable, $candidate->fresh()->status);
     }
 
+    public function test_keeps_a_status_the_admin_set_while_a_too_high_quote_was_in_flight(): void
+    {
+        $rule = $this->rule(['country_code' => 'CN']);
+        $candidate = $this->candidate($rule, 'p-100', '10.00');
+        $this->cj->fixture('product-detail')->success([
+            ['logisticName' => 'Yun Express', 'logisticPrice' => '15.00', 'logisticAging' => '8-12'],
+        ]);
+
+        Candidate::retrieved(function (Candidate $retrieved) use ($candidate): void {
+            if ($retrieved->is($candidate) && $retrieved->status === CandidateStatus::Pending) {
+                Candidate::query()->whereKey($candidate->id)->update(['status' => CandidateStatus::Approved->value]);
+            }
+        });
+
+        $stats = app(CheckCandidateShipping::class)->handle($rule);
+
+        $this->assertSame(['checked' => 1, 'too_high' => 0, 'skipped' => 0], $stats);
+        $candidate->refresh();
+        $this->assertSame(CandidateStatus::Approved, $candidate->status);
+        $this->assertSame('15.00', $candidate->shipping_usd);
+        $this->assertNotNull($candidate->shipping_checked_at);
+    }
+
+    public function test_keeps_a_status_the_admin_set_while_a_not_found_check_was_in_flight(): void
+    {
+        $rule = $this->rule(['country_code' => 'CN']);
+        $candidate = $this->candidate($rule, 'p-100', '10.00');
+        $this->cj->error(1602001, 'Product not found');
+
+        Candidate::retrieved(function (Candidate $retrieved) use ($candidate): void {
+            if ($retrieved->is($candidate) && $retrieved->status === CandidateStatus::Pending) {
+                Candidate::query()->whereKey($candidate->id)->update(['status' => CandidateStatus::Ignored->value]);
+            }
+        });
+
+        $stats = app(CheckCandidateShipping::class)->handle($rule);
+
+        $this->assertSame(1, $stats['skipped']);
+        $candidate->refresh();
+        $this->assertSame(CandidateStatus::Ignored, $candidate->status);
+        $this->assertNotNull($candidate->shipping_checked_at);
+    }
+
     public function test_stops_when_the_cj_quota_is_used_up(): void
     {
         $rule = $this->rule(['country_code' => 'CN']);

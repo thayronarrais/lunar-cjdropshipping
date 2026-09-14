@@ -45,7 +45,9 @@ return [
         'usd_to_default_rate' => env('CJ_USD_TO_DEFAULT_RATE'),
         // Locked listing prices whose margin falls below this percentage are flagged "margin at risk" on sync.
         'min_margin_percent' => 20,
-        // Card payment fee deducted when showing listing profit: percent of the price plus a fixed amount (listing currency).
+        // Card payment fee deducted when showing listing profit: percent of the price plus a fixed
+        // amount, in the major units of each listing's currency (e.g. 0.20 = 20 cents for USD/GBP/EUR).
+        // Adjust it for currencies whose major unit is worth very different amounts (e.g. JPY, VND).
         'card_fee_percent' => 1.5,
         'card_fee_fixed' => 0.20,
     ],

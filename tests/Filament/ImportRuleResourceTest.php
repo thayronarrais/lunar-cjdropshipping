@@ -106,6 +106,51 @@ final class ImportRuleResourceTest extends FilamentTestCase
         $this->assertTrue($rule->hasFreightFilter());
     }
 
+    public function test_requires_max_shipping_percent_when_ship_to_country_is_set(): void
+    {
+        Country::factory()->create(['iso2' => 'GB', 'iso3' => 'GBR', 'name' => 'United Kingdom']);
+
+        Livewire::test(CreateImportRule::class)
+            ->fillForm([
+                'name' => 'Pets UK',
+                'keyword' => 'dog',
+                'markup_percent' => 100,
+                'rounding' => 'none',
+                'product_type_id' => $this->productType->id,
+                'ship_to_country' => 'GB',
+                'max_shipping_percent' => null,
+            ])
+            ->call('create')
+            ->assertHasFormErrors(['max_shipping_percent']);
+
+        $this->assertSame(0, ImportRule::query()->count());
+    }
+
+    public function test_requires_ship_to_country_when_max_shipping_percent_is_set(): void
+    {
+        Livewire::test(CreateImportRule::class)
+            ->fillForm([
+                'name' => 'Pets UK',
+                'keyword' => 'dog',
+                'markup_percent' => 100,
+                'rounding' => 'none',
+                'product_type_id' => $this->productType->id,
+                'ship_to_country' => null,
+                'max_shipping_percent' => 100,
+            ])
+            ->call('create')
+            ->assertHasFormErrors(['ship_to_country']);
+
+        $this->assertSame(0, ImportRule::query()->count());
+    }
+
+    public function test_freight_filter_is_disabled_when_only_one_field_is_set(): void
+    {
+        $rule = new ImportRule(['ship_to_country' => 'GB']);
+
+        $this->assertFalse($rule->hasFreightFilter());
+    }
+
     public function test_discover_action_queues_the_job(): void
     {
         Queue::fake();

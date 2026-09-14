@@ -122,13 +122,15 @@ class ImportRuleResource extends BaseResource
                     ->label($field('ship_to_country'))
                     ->helperText($field('ship_to_country_help'))
                     ->searchable()
-                    ->options(fn (): array => Country::query()->orderBy('name')->pluck('name', 'iso2')->all()),
+                    ->options(fn (): array => Country::query()->orderBy('name')->pluck('name', 'iso2')->all())
+                    ->requiredWith('max_shipping_percent'),
                 Forms\Components\TextInput::make('max_shipping_percent')
                     ->label($field('max_shipping_percent'))
                     ->helperText($field('max_shipping_percent_help'))
                     ->numeric()
                     ->minValue(0)
-                    ->suffix('%'),
+                    ->suffix('%')
+                    ->requiredWith('ship_to_country'),
                 Forms\Components\TextInput::make('max_quotes_per_run')
                     ->label($field('max_quotes_per_run'))
                     ->helperText($field('max_quotes_per_run_help'))

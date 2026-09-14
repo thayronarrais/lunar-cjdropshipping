@@ -14,6 +14,8 @@ use Lunar\Models\Currency;
  */
 final class SiteCurrencies
 {
+    private ?bool $hasStorefrontChannelsTable = null;
+
     /**
      * @param  array<int, int>  $channelIds
      * @return array<int, string> channel id => currency code
@@ -29,7 +31,7 @@ final class SiteCurrencies
             }
         }
 
-        if ($channelIds === [] || ! Schema::hasTable('storefront_channels')) {
+        if ($channelIds === [] || ! $this->hasStorefrontChannelsTable()) {
             return $codes;
         }
 
@@ -45,5 +47,14 @@ final class SiteCurrencies
         }
 
         return $codes;
+    }
+
+    /**
+     * Memoized per instance (bound `scoped` in the service provider) so the schema is inspected at
+     * most once per request.
+     */
+    private function hasStorefrontChannelsTable(): bool
+    {
+        return $this->hasStorefrontChannelsTable ??= Schema::hasTable('storefront_channels');
     }
 }
